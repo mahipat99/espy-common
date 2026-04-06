@@ -9,8 +9,7 @@ namespace web_server_custom {
 static const char *TAG = "web_server_custom";
 
 // ---------------------------------------------------------------------------
-// Helper: stable ID from entity name (lowercase, spaces → underscores)
-// Avoids deprecated get_object_id() which is removed in 2026.7
+// Helper: stable ID from entity name (lowercase, spaces/dashes → underscores)
 // ---------------------------------------------------------------------------
 std::string WebServerCustom::make_id(const std::string &name) {
   std::string id = name;
@@ -20,6 +19,32 @@ std::string WebServerCustom::make_id(const std::string &name) {
   }
   return id;
 }
+
+// ---------------------------------------------------------------------------
+// Helper: get_device_class safely (ESP8266 forbids get_device_class())
+// ---------------------------------------------------------------------------
+static std::string safe_device_class(EntityBase *e) {
+  std::string buf(64, '\0');
+  e->get_device_class_to(buf);
+  // trim to actual length
+  buf.resize(strlen(buf.c_str()));
+  return buf;
+}
+
+// ---------------------------------------------------------------------------
+// LightTargetStateReachedListener wrapper
+// add_target_state_reached_listener() needs a pointer to a class implementing
+// the interface, not a raw lambda.
+// ---------------------------------------------------------------------------
+#ifdef USE_LIGHT
+class LightChangeListener : public light::LightTargetStateReachedListener {
+ public:
+  explicit LightChangeListener(std::function<void()> cb) : cb_(std::move(cb)) {}
+  void on_light_target_state_reached() override { cb_(); }
+ private:
+  std::function<void()> cb_;
+};
+#endif
 
 WebServerCustom::WebServerCustom() {}
 
@@ -36,12 +61,12 @@ void WebServerCustom::setup() {
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  // ---- SPA ----------------------------------------------------------------
+  // ---- SPA — only serve for exact "/" --------------------------------
   server_->on("/", HTTP_GET, [this](AsyncWebServerRequest *req) {
     handle_index(req);
   });
 
-  // ---- REST API -----------------------------------------------------------
+  // ---- REST API -------------------------------------------------------
   server_->on("/api/state", HTTP_GET, [this](AsyncWebServerRequest *req) {
     if (!check_auth(req)) return;
     handle_state(req);
@@ -107,20 +132,28 @@ void WebServerCustom::setup() {
 
   server_->on("/", HTTP_OPTIONS, [](AsyncWebServerRequest *req) { req->send(204); });
 
-  // ---- SSE ----------------------------------------------------------------
+  // ---- SSE ------------------------------------------------------------
   events_->onConnect([this](AsyncEventSourceClient *client) {
     ESP_LOGD(TAG, "SSE client connected");
     send_full_state(client);
   });
   server_->addHandler(events_);
 
-  // ---- 404: serve SPA for client-side routing ----------------------------
-  server_->onNotFound([this](AsyncWebServerRequest *req) {
-    if (req->method() == HTTP_GET) handle_index(req);
-    else req->send(404, "application/json", "{\"error\":\"not found\"}");
+  // ---- 404: do NOT catch-all serve the SPA — let captive_portal etc work
+  // Only known /api/* paths that miss get a JSON 404.
+  server_->onNotFound([](AsyncWebServerRequest *req) {
+    String url = req->url();
+    if (url.startsWith("/api/")) {
+      req->send(404, "application/json", "{\"error\":\"not found\"}");
+    } else {
+      // Let the request fall through — captive portal, OTA, etc. register
+      // their own handlers on the shared web_server_base. Unknown paths
+      // return a plain 404 so the browser doesn't silently get our SPA.
+      req->send(404);
+    }
   });
 
-  // ---- Entity state callbacks → SSE push ---------------------------------
+  // ---- Entity callbacks → SSE push ------------------------------------
 #ifdef USE_SWITCH
   for (auto *sw : App.get_switches()) {
     sw->add_on_state_callback([this, sw](bool) {
@@ -135,13 +168,14 @@ void WebServerCustom::setup() {
 
 #ifdef USE_LIGHT
   for (auto *light : App.get_lights()) {
-    light->add_target_state_reached_listener([this, light]() {
+    auto *listener = new LightChangeListener([this, light]() {
       JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
       build_light_json(obj, light);
       String out; serializeJson(doc, out);
       events_->send(out.c_str(), "state_change", millis());
     });
+    light->add_target_state_reached_listener(listener);
   }
 #endif
 
@@ -217,7 +251,7 @@ void WebServerCustom::handle_index(AsyncWebServerRequest *request) {
 }
 
 // ---------------------------------------------------------------------------
-// Full state snapshot (REST + SSE initial push)
+// State
 // ---------------------------------------------------------------------------
 void WebServerCustom::handle_state(AsyncWebServerRequest *request) {
   JsonDocument doc;
@@ -371,68 +405,59 @@ void WebServerCustom::handle_button_press(AsyncWebServerRequest *request,
 }
 
 // ---------------------------------------------------------------------------
-// JSON builders  (ArduinoJson v7: no createNestedArray/createNestedObject)
+// JSON builders
 // ---------------------------------------------------------------------------
 void WebServerCustom::build_all_entities_json(JsonDocument &doc) {
   JsonObject root = doc.to<JsonObject>();
-  root["device_name"]    = App.get_name().c_str();
-  root["friendly_name"]  = App.get_friendly_name().c_str();
-  root["esphome_version"]= ESPHOME_VERSION;
-  root["uptime"]         = millis() / 1000;
+  root["device_name"]     = App.get_name().c_str();
+  root["friendly_name"]   = App.get_friendly_name().c_str();
+  root["esphome_version"] = ESPHOME_VERSION;
+  root["uptime"]          = millis() / 1000;
 
 #ifdef USE_SWITCH
   JsonArray switches = root["switches"].to<JsonArray>();
-  for (auto *sw : App.get_switches()) {
+  for (auto *sw : App.get_switches())
     build_switch_json(switches.add<JsonObject>(), sw);
-  }
 #endif
 #ifdef USE_LIGHT
   JsonArray lights = root["lights"].to<JsonArray>();
-  for (auto *light : App.get_lights()) {
+  for (auto *light : App.get_lights())
     build_light_json(lights.add<JsonObject>(), light);
-  }
 #endif
 #ifdef USE_SENSOR
   JsonArray sensors = root["sensors"].to<JsonArray>();
-  for (auto *sensor : App.get_sensors()) {
+  for (auto *sensor : App.get_sensors())
     build_sensor_json(sensors.add<JsonObject>(), sensor);
-  }
 #endif
 #ifdef USE_BINARY_SENSOR
   JsonArray binary_sensors = root["binary_sensors"].to<JsonArray>();
-  for (auto *bs : App.get_binary_sensors()) {
+  for (auto *bs : App.get_binary_sensors())
     build_binary_sensor_json(binary_sensors.add<JsonObject>(), bs);
-  }
 #endif
 #ifdef USE_TEXT_SENSOR
   JsonArray text_sensors = root["text_sensors"].to<JsonArray>();
-  for (auto *ts : App.get_text_sensors()) {
+  for (auto *ts : App.get_text_sensors())
     build_text_sensor_json(text_sensors.add<JsonObject>(), ts);
-  }
 #endif
 #ifdef USE_CLIMATE
   JsonArray climates = root["climates"].to<JsonArray>();
-  for (auto *climate : App.get_climates()) {
+  for (auto *climate : App.get_climates())
     build_climate_json(climates.add<JsonObject>(), climate);
-  }
 #endif
 #ifdef USE_FAN
   JsonArray fans = root["fans"].to<JsonArray>();
-  for (auto *fan : App.get_fans()) {
+  for (auto *fan : App.get_fans())
     build_fan_json(fans.add<JsonObject>(), fan);
-  }
 #endif
 #ifdef USE_NUMBER
   JsonArray numbers = root["numbers"].to<JsonArray>();
-  for (auto *number : App.get_numbers()) {
+  for (auto *number : App.get_numbers())
     build_number_json(numbers.add<JsonObject>(), number);
-  }
 #endif
 #ifdef USE_SELECT
   JsonArray selects = root["selects"].to<JsonArray>();
-  for (auto *select : App.get_selects()) {
+  for (auto *select : App.get_selects())
     build_select_json(selects.add<JsonObject>(), select);
-  }
 #endif
 #ifdef USE_BUTTON
   JsonArray buttons = root["buttons"].to<JsonArray>();
@@ -456,24 +481,20 @@ void WebServerCustom::build_switch_json(JsonObject obj, switch_::Switch *sw) {
 
 #ifdef USE_LIGHT
 void WebServerCustom::build_light_json(JsonObject obj, light::LightState *light) {
-  obj["id"]   = make_id(light->get_name()).c_str();
-  obj["name"] = light->get_name().c_str();
-  obj["type"] = "light";
-  auto values = light->current_values;
+  obj["id"]         = make_id(light->get_name()).c_str();
+  obj["name"]       = light->get_name().c_str();
+  obj["type"]       = "light";
+  auto values       = light->current_values;
   obj["state"]      = values.is_on();
   obj["brightness"] = (int)(values.get_brightness() * 255);
 
   auto traits = light->get_traits();
-
-  // Color temperature
   if (traits.supports_color_mode(light::ColorMode::COLOR_TEMPERATURE) ||
       traits.supports_color_mode(light::ColorMode::COLD_WARM_WHITE)) {
     obj["color_temp"] = values.get_color_temperature();
     obj["min_mireds"] = traits.get_min_mireds();
     obj["max_mireds"] = traits.get_max_mireds();
   }
-
-  // RGB
   if (traits.supports_color_mode(light::ColorMode::RGB) ||
       traits.supports_color_mode(light::ColorMode::RGB_WHITE) ||
       traits.supports_color_mode(light::ColorMode::RGB_COLOR_TEMPERATURE) ||
@@ -482,11 +503,9 @@ void WebServerCustom::build_light_json(JsonObject obj, light::LightState *light)
     obj["g"] = (int)(values.get_green() * 255);
     obj["b"] = (int)(values.get_blue()  * 255);
   }
-
   JsonArray effects = obj["effects"].to<JsonArray>();
-  for (auto &effect : light->get_effects()) {
+  for (auto &effect : light->get_effects())
     effects.add(effect->get_name().c_str());
-  }
   obj["effect"] = light->get_effect_name().c_str();
 }
 #endif
@@ -497,7 +516,7 @@ void WebServerCustom::build_sensor_json(JsonObject obj, sensor::Sensor *sensor) 
   obj["name"]         = sensor->get_name().c_str();
   obj["type"]         = "sensor";
   obj["unit"]         = sensor->get_unit_of_measurement().c_str();
-  obj["device_class"] = sensor->get_device_class().c_str();
+  obj["device_class"] = safe_device_class(sensor).c_str();
   if (sensor->has_state()) obj["state"] = sensor->get_state();
   else obj["state"] = nullptr;
 }
@@ -509,7 +528,7 @@ void WebServerCustom::build_binary_sensor_json(JsonObject obj,
   obj["id"]           = make_id(bs->get_name()).c_str();
   obj["name"]         = bs->get_name().c_str();
   obj["type"]         = "binary_sensor";
-  obj["device_class"] = bs->get_device_class().c_str();
+  obj["device_class"] = safe_device_class(bs).c_str();
   obj["state"]        = bs->state;
 }
 #endif
@@ -520,7 +539,7 @@ void WebServerCustom::build_text_sensor_json(JsonObject obj,
   obj["id"]           = make_id(ts->get_name()).c_str();
   obj["name"]         = ts->get_name().c_str();
   obj["type"]         = "text_sensor";
-  obj["device_class"] = ts->get_device_class().c_str();
+  obj["device_class"] = safe_device_class(ts).c_str();
   obj["state"]        = ts->get_state().c_str();
 }
 #endif
@@ -539,10 +558,10 @@ void WebServerCustom::build_climate_json(JsonObject obj, climate::Climate *clima
 
 #ifdef USE_FAN
 void WebServerCustom::build_fan_json(JsonObject obj, fan::Fan *fan) {
-  obj["id"]    = make_id(fan->get_name()).c_str();
-  obj["name"]  = fan->get_name().c_str();
-  obj["type"]  = "fan";
-  obj["state"] = fan->state;
+  obj["id"]          = make_id(fan->get_name()).c_str();
+  obj["name"]        = fan->get_name().c_str();
+  obj["type"]        = "fan";
+  obj["state"]       = fan->state;
   if (fan->get_traits().supports_speed()) {
     obj["speed"]       = fan->speed;
     obj["speed_count"] = fan->get_traits().supported_speed_count();
@@ -553,13 +572,13 @@ void WebServerCustom::build_fan_json(JsonObject obj, fan::Fan *fan) {
 
 #ifdef USE_NUMBER
 void WebServerCustom::build_number_json(JsonObject obj, number::Number *number) {
-  obj["id"]   = make_id(number->get_name()).c_str();
-  obj["name"] = number->get_name().c_str();
-  obj["type"] = "number";
-  obj["min"]  = number->traits.get_min_value();
-  obj["max"]  = number->traits.get_max_value();
-  obj["step"] = number->traits.get_step();
-  obj["unit"] = number->traits.get_unit_of_measurement().c_str();
+  obj["id"]    = make_id(number->get_name()).c_str();
+  obj["name"]  = number->get_name().c_str();
+  obj["type"]  = "number";
+  obj["min"]   = number->traits.get_min_value();
+  obj["max"]   = number->traits.get_max_value();
+  obj["step"]  = number->traits.get_step();
+  obj["unit"]  = number->traits.get_unit_of_measurement().c_str();
   if (number->has_state()) obj["state"] = number->state;
   else obj["state"] = nullptr;
 }
@@ -567,9 +586,9 @@ void WebServerCustom::build_number_json(JsonObject obj, number::Number *number) 
 
 #ifdef USE_SELECT
 void WebServerCustom::build_select_json(JsonObject obj, select::Select *select) {
-  obj["id"]   = make_id(select->get_name()).c_str();
-  obj["name"] = select->get_name().c_str();
-  obj["type"] = "select";
+  obj["id"]    = make_id(select->get_name()).c_str();
+  obj["name"]  = select->get_name().c_str();
+  obj["type"]  = "select";
   JsonArray options = obj["options"].to<JsonArray>();
   for (auto &opt : select->traits.get_options()) options.add(opt.c_str());
   obj["state"] = select->state.c_str();
