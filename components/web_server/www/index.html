@@ -29,8 +29,6 @@
     min-height: 100vh;
     font-size: 15px;
   }
-
-  /* ── Header ─────────────────────────────────────────────────────────── */
   header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -56,8 +54,6 @@
   .status-dot.connected { background: var(--on); box-shadow: 0 0 8px var(--on); }
   .header-right { display: flex; align-items: center; gap: 12px; }
   .uptime { color: var(--text2); font-size: 13px; }
-
-  /* ── Tabs ────────────────────────────────────────────────────────────── */
   .tabs {
     display: flex;
     gap: 4px;
@@ -65,6 +61,7 @@
     border-bottom: 1px solid var(--border);
     max-width: 100%;
     box-sizing: border-box;
+    overflow-x: auto;
   }
   .tab {
     padding: 8px 16px;
@@ -96,17 +93,12 @@
     font-size: 11px;
     margin-left: 4px;
   }
-
-  /* ── Main grid ───────────────────────────────────────────────────────── */
   main {
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
   }
-  .section { display: none; }
-  .section.active { display: block; }
-
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -117,8 +109,6 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 12px;
   }
-
-  /* ── Card ────────────────────────────────────────────────────────────── */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -136,11 +126,7 @@
   }
   .card-title { font-weight: 600; font-size: 14px; line-height: 1.3; }
   .card-meta { color: var(--text2); font-size: 12px; margin-top: 2px; }
-
-  /* ── Toggle switch ───────────────────────────────────────────────────── */
-  .toggle {
-    position: relative; width: 44px; height: 24px; flex-shrink: 0;
-  }
+  .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
   .toggle-track {
     position: absolute; inset: 0;
@@ -160,70 +146,34 @@
     transition: transform var(--transition);
   }
   .toggle input:checked + .toggle-track::after { transform: translateX(20px); }
-
-  /* ── Sensor value ────────────────────────────────────────────────────── */
-  .sensor-value {
-    font-size: 28px; font-weight: 600;
-    letter-spacing: -0.5px;
-    line-height: 1;
-  }
+  .sensor-value { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; line-height: 1; }
   .sensor-unit { color: var(--text2); font-size: 14px; margin-left: 3px; }
   .sensor-ok { color: var(--text); }
   .sensor-null { color: var(--off); font-size: 18px; }
-
-  /* ── Range slider ────────────────────────────────────────────────────── */
   input[type=range] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
+    -webkit-appearance: none; width: 100%; height: 4px;
+    border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
   }
   input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
     transition: transform var(--transition);
   }
   input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
-  .range-label {
-    display: flex; justify-content: space-between;
-    color: var(--text2); font-size: 12px; margin-bottom: 4px;
-  }
-
-  /* ── Color picker ────────────────────────────────────────────────────── */
+  .range-label { display: flex; justify-content: space-between; color: var(--text2); font-size: 12px; margin-bottom: 4px; }
   .color-row { display: flex; align-items: center; gap: 8px; }
   input[type=color] {
-    -webkit-appearance: none;
-    width: 36px; height: 36px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 2px;
-    background: var(--surface2);
-    cursor: pointer;
+    -webkit-appearance: none; width: 36px; height: 36px;
+    border: 2px solid var(--border); border-radius: var(--radius-sm);
+    padding: 2px; background: var(--surface2); cursor: pointer;
   }
-
-  /* ── Select dropdown ─────────────────────────────────────────────────── */
   select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    padding: 8px 10px;
-    font-size: 14px;
-    width: 100%;
-    cursor: pointer;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    padding: 8px 10px; font-size: 14px; width: 100%; cursor: pointer;
   }
   select:focus { outline: 2px solid var(--accent); }
-
-  /* ── Number input ────────────────────────────────────────────────────── */
-  .number-control {
-    display: flex; align-items: center; gap: 8px;
-  }
+  .number-control { display: flex; align-items: center; gap: 8px; }
   .num-btn {
     background: var(--surface2); border: 1px solid var(--border);
     color: var(--text); width: 32px; height: 32px;
@@ -233,8 +183,6 @@
   }
   .num-btn:hover { background: var(--border); }
   .num-val { flex: 1; text-align: center; font-weight: 600; font-size: 16px; }
-
-  /* ── Button ──────────────────────────────────────────────────────────── */
   .btn {
     background: var(--surface2); border: 1px solid var(--border);
     color: var(--text); padding: 10px 16px;
@@ -244,114 +192,37 @@
   }
   .btn:hover { background: var(--border); border-color: var(--accent); }
   .btn:active { transform: scale(0.97); }
-
-  /* ── Climate card ────────────────────────────────────────────────────── */
-  .climate-temp {
-    font-size: 36px; font-weight: 700; text-align: center;
-    margin: 8px 0;
-  }
-  .climate-action {
-    text-align: center;
-    font-size: 12px;
-    color: var(--text2);
-    margin-bottom: 8px;
-  }
-  .climate-modes {
-    display: flex; gap: 4px; flex-wrap: wrap;
-  }
+  .climate-temp { font-size: 36px; font-weight: 700; text-align: center; margin: 8px 0; }
+  .climate-action { text-align: center; font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .climate-modes { display: flex; gap: 4px; flex-wrap: wrap; }
   .mode-btn {
-    flex: 1;
-    padding: 6px 4px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text2); font-size: 12px;
-    cursor: pointer; text-align: center;
+    flex: 1; padding: 6px 4px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text2); font-size: 12px; cursor: pointer; text-align: center;
     transition: all var(--transition);
   }
-  .mode-btn.active {
-    background: var(--accent-glow);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  /* ── Light RGB preview ───────────────────────────────────────────────── */
-  .light-color-preview {
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    flex-shrink: 0;
-  }
-
-  /* ── Effects chips ───────────────────────────────────────────────────── */
-  .effects-wrap {
-    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px;
-  }
+  .mode-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+  .light-color-preview { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
+  .effects-wrap { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
   .effect-chip {
-    padding: 3px 10px;
-    border-radius: 99px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    font-size: 12px; cursor: pointer;
+    padding: 3px 10px; border-radius: 99px; background: var(--surface2);
+    border: 1px solid var(--border); font-size: 12px; cursor: pointer;
     transition: all var(--transition);
   }
-  .effect-chip.active {
-    background: var(--accent-glow);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  /* ── Empty state ─────────────────────────────────────────────────────── */
-  .empty {
-    text-align: center; padding: 48px 20px;
-    color: var(--text2);
-  }
-
-  /* ── Loader ──────────────────────────────────────────────────────────── */
+  .effect-chip.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+  .empty { text-align: center; padding: 48px 20px; color: var(--text2); }
   #loader {
-    position: fixed; inset: 0;
-    background: var(--bg);
+    position: fixed; inset: 0; background: var(--bg);
     display: flex; align-items: center; justify-content: center;
     flex-direction: column; gap: 12px;
-    font-size: 14px; color: var(--text2);
-    z-index: 999;
-    transition: opacity 0.4s;
+    font-size: 14px; color: var(--text2); z-index: 999; transition: opacity 0.4s;
   }
   .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── OTA ─────────────────────────────────────────────────────────────── */
-  .ota-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    max-width: 400px;
-  }
-  .ota-drop {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius-sm);
-    padding: 32px;
-    text-align: center;
-    color: var(--text2);
-    cursor: pointer;
-    transition: border-color var(--transition);
-    margin: 12px 0;
-  }
-  .ota-drop:hover, .ota-drop.drag { border-color: var(--accent); color: var(--text); }
-  progress {
-    width: 100%; height: 6px; border-radius: 3px;
-    appearance: none; margin-top: 8px;
-  }
-  progress::-webkit-progress-bar { background: var(--border); border-radius: 3px; }
-  progress::-webkit-progress-value { background: var(--accent); border-radius: 3px; }
-
   @media (max-width: 480px) {
     .grid { grid-template-columns: 1fr; }
     .grid-wide { grid-template-columns: 1fr; }
@@ -372,9 +243,7 @@
       <circle cx="14" cy="14" r="13" stroke="#5b6ef5" stroke-width="2"/>
       <path d="M9 14l3 3 7-7" stroke="#5b6ef5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-    <div>
-      <div class="device-name" id="device-name">ESPHome</div>
-    </div>
+    <div><div class="device-name" id="device-name">ESPHome</div></div>
   </div>
   <div class="header-right">
     <span class="uptime" id="uptime-label"></span>
@@ -383,31 +252,23 @@
 </header>
 
 <nav class="tabs" id="tabs"></nav>
-
-<main id="main">
-  <div id="loader-inner" class="empty">Loading…</div>
-</main>
+<main id="main"></main>
 
 <script>
 'use strict';
-
-// ── State ───────────────────────────────────────────────────────────────────
 let state = {};
 let activeTab = 'all';
 
-// ── Uptime formatter ────────────────────────────────────────────────────────
 function fmtUptime(s) {
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${sec}s`;
   return `${sec}s`;
 }
 
-// ── SSE connection ──────────────────────────────────────────────────────────
 function connect() {
   const dot = document.getElementById('status-dot');
   const es = new EventSource('/events');
-
   es.addEventListener('full_state', e => {
     try {
       state = JSON.parse(e.data);
@@ -420,7 +281,6 @@ function connect() {
       renderAll();
     } catch(err) { console.error('full_state parse error', err); }
   });
-
   es.addEventListener('state_change', e => {
     try {
       const entity = JSON.parse(e.data);
@@ -428,7 +288,6 @@ function connect() {
       updateCard(entity);
     } catch(err) { console.error('state_change parse error', err); }
   });
-
   es.onerror = () => { dot.classList.remove('connected'); };
 }
 
@@ -442,51 +301,42 @@ function mergeEntity(entity) {
   }
 }
 
-// ── Periodic uptime poll ────────────────────────────────────────────────────
 setInterval(async () => {
   try {
     const r = await fetch('/api/state');
     const s = await r.json();
-    if (s.uptime !== undefined) {
+    if (s.uptime !== undefined)
       document.getElementById('uptime-label').textContent = fmtUptime(s.uptime);
-    }
   } catch {}
 }, 10000);
 
-// ── API helpers ─────────────────────────────────────────────────────────────
 async function post(url, params = {}) {
   const fd = new FormData();
   for (const [k, v] of Object.entries(params)) fd.append(k, v);
   await fetch(url, { method: 'POST', body: fd });
 }
 
-// ── Render all sections ─────────────────────────────────────────────────────
-function renderAll() {
-  buildTabs();
-  renderSection();
-}
+function renderAll() { buildTabs(); renderSection(); }
 
 const SECTIONS = [
-  { key: 'all',           label: 'All' },
-  { key: 'switches',      label: 'Switches' },
-  { key: 'lights',        label: 'Lights' },
-  { key: 'sensors',       label: 'Sensors' },
-  { key: 'binary_sensors',label: 'Binary' },
-  { key: 'text_sensors',  label: 'Text' },
-  { key: 'fans',          label: 'Fans' },
-  { key: 'climates',      label: 'Climate' },
-  { key: 'numbers',       label: 'Numbers' },
-  { key: 'selects',       label: 'Selects' },
-  { key: 'buttons',       label: 'Buttons' },
+  { key: 'all',            label: 'All' },
+  { key: 'switches',       label: 'Switches' },
+  { key: 'lights',         label: 'Lights' },
+  { key: 'sensors',        label: 'Sensors' },
+  { key: 'binary_sensors', label: 'Binary' },
+  { key: 'text_sensors',   label: 'Text' },
+  { key: 'fans',           label: 'Fans' },
+  { key: 'climates',       label: 'Climate' },
+  { key: 'numbers',        label: 'Numbers' },
+  { key: 'selects',        label: 'Selects' },
+  { key: 'buttons',        label: 'Buttons' },
 ];
 
 function buildTabs() {
   const nav = document.getElementById('tabs');
   nav.innerHTML = '';
   for (const s of SECTIONS) {
-    const count = s.key === 'all' || s.key === 'ota'
-      ? null
-      : (state[s.key] || []).length;
+    const count = s.key === 'all' ? null : (state[s.key] || []).length;
     if (count === 0) continue;
     const btn = document.createElement('button');
     btn.className = 'tab' + (activeTab === s.key ? ' active' : '');
@@ -508,7 +358,6 @@ function renderSection() {
     ? ['switches','lights','sensors','binary_sensors','text_sensors',
        'fans','climates','numbers','selects','buttons']
     : [activeTab];
-
   let any = false;
   for (const key of keys) {
     const items = state[key] || [];
@@ -522,10 +371,7 @@ function renderSection() {
     }
     const grid = document.createElement('div');
     grid.className = ['climates','lights','numbers'].includes(key) ? 'grid-wide' : 'grid';
-    for (const e of items) {
-      const card = buildCard(key, e);
-      if (card) grid.appendChild(card);
-    }
+    for (const e of items) { const c = buildCard(key, e); if (c) grid.appendChild(c); }
     main.appendChild(grid);
   }
   if (!any) {
@@ -535,7 +381,6 @@ function renderSection() {
   }
 }
 
-// ── Card builders ───────────────────────────────────────────────────────────
 function buildCard(type, e) {
   switch (type) {
     case 'switches':       return cardSwitch(e);
@@ -558,9 +403,8 @@ function card(id, inner) {
   d.innerHTML = inner; return d;
 }
 
-// Switch
 function cardSwitch(e) {
-  const c = card(e.id, `
+  return card(e.id, `
     <div class="card-header">
       <div><div class="card-title">${esc(e.name)}</div>
            <div class="card-meta">switch</div></div>
@@ -569,10 +413,8 @@ function cardSwitch(e) {
         <div class="toggle-track"></div>
       </label>
     </div>`);
-  return c;
 }
 
-// Light
 function cardLight(e) {
   const rgb = e.r != null ? `rgb(${e.r},${e.g},${e.b})` : '#ffffff';
   const effects = (e.effects || []).filter(x => x && x !== 'None');
@@ -605,11 +447,9 @@ function cardLight(e) {
     ${e.r != null ? `
     <div class="color-row" style="margin-top:10px">
       <span style="font-size:13px;color:var(--text2)">Color</span>
-      <input type="color" value="${rgb2hex(e.r,e.g,e.b)}"
-        onchange="sendRGB('${esc(e.id)}',this.value)">
+      <input type="color" value="${rgb2hex(e.r,e.g,e.b)}" onchange="sendRGB('${esc(e.id)}',this.value)">
     </div>` : ''}
-    ${effectChips ? `<div class="effects-wrap">${effectChips}</div>` : ''}
-  `);
+    ${effectChips ? `<div class="effects-wrap">${effectChips}</div>` : ''}`);
 }
 
 function sendRGB(id, hex) {
@@ -620,7 +460,6 @@ function rgb2hex(r,g,b) {
   return '#' + [r,g,b].map(v => (v||0).toString(16).padStart(2,'0')).join('');
 }
 
-// Sensor
 function cardSensor(e) {
   const val = e.state != null
     ? `<span class="sensor-value sensor-ok">${typeof e.state === 'number' ? e.state.toFixed(1) : e.state}</span><span class="sensor-unit">${esc(e.unit||'')}</span>`
@@ -633,7 +472,6 @@ function cardSensor(e) {
     <div style="margin-top:4px">${val}</div>`);
 }
 
-// Binary sensor
 function cardBinary(e) {
   const pill = e.state
     ? `<span style="color:var(--on);font-weight:600">ON</span>`
@@ -646,7 +484,6 @@ function cardBinary(e) {
     </div>`);
 }
 
-// Text sensor
 function cardText(e) {
   return card(e.id, `
     <div class="card-header">
@@ -656,7 +493,6 @@ function cardText(e) {
     <div style="font-size:16px;font-weight:600;margin-top:4px;word-break:break-all">${esc(e.state||'—')}</div>`);
 }
 
-// Fan
 function cardFan(e) {
   const speeds = e.speed_count || 0;
   return card(e.id, `
@@ -676,7 +512,6 @@ function cardFan(e) {
       onchange="post('/api/fan/${esc(e.id)}',{speed:this.value})">` : ''}`);
 }
 
-// Climate
 function cardClimate(e) {
   const modes = ['off','heat','cool','heat_cool','fan_only','dry','auto'];
   const modeButtons = modes.map(m =>
@@ -688,8 +523,8 @@ function cardClimate(e) {
       <div><div class="card-title">${esc(e.name)}</div>
            <div class="card-meta">climate</div></div>
     </div>
-    <div class="climate-temp">${e.current_temperature != null ? e.current_temperature.toFixed(1) + '°' : '—'}</div>
-    <div class="climate-action">${esc(e.action||'')} · target ${e.target_temperature != null ? e.target_temperature.toFixed(1) + '°' : '—'}</div>
+    <div class="climate-temp">${e.current_temperature != null ? e.current_temperature.toFixed(1)+'°' : '—'}</div>
+    <div class="climate-action">${esc(e.action||'')} · target ${e.target_temperature != null ? e.target_temperature.toFixed(1)+'°' : '—'}</div>
     <div class="range-label"><span>Set target</span><span id="ct2-${esc(e.id)}">${e.target_temperature||20}</span>°</div>
     <input type="range" min="10" max="35" step="0.5" value="${e.target_temperature||20}"
       oninput="document.getElementById('ct2-${esc(e.id)}').textContent=parseFloat(this.value).toFixed(1)"
@@ -697,7 +532,6 @@ function cardClimate(e) {
     <div class="climate-modes" style="margin-top:12px">${modeButtons}</div>`);
 }
 
-// Number
 function cardNumber(e) {
   const step = e.step || 1;
   return card(e.id, `
@@ -710,11 +544,9 @@ function cardNumber(e) {
       <div class="num-val" id="nv-${esc(e.id)}">${e.state != null ? e.state : '—'}</div>
       <button class="num-btn" onclick="numStep('${esc(e.id)}',${step},${e.min},${e.max})">+</button>
     </div>
-    <div style="margin-top:8px">
-      <input type="range" min="${e.min}" max="${e.max}" step="${step}" value="${e.state||e.min}"
-        oninput="document.getElementById('nv-${esc(e.id)}').textContent=this.value"
-        onchange="post('/api/number/${esc(e.id)}',{value:this.value})">
-    </div>`);
+    <input type="range" min="${e.min}" max="${e.max}" step="${step}" value="${e.state||e.min}" style="margin-top:8px"
+      oninput="document.getElementById('nv-${esc(e.id)}').textContent=this.value"
+      onchange="post('/api/number/${esc(e.id)}',{value:this.value})">`);
 }
 
 function numStep(id, delta, min, max) {
@@ -725,7 +557,6 @@ function numStep(id, delta, min, max) {
   post(`/api/number/${id}`, {value: v});
 }
 
-// Select
 function cardSelect(e) {
   const opts = (e.options || []).map(o =>
     `<option value="${esc(o)}" ${e.state===o?'selected':''}>${esc(o)}</option>`
@@ -738,7 +569,6 @@ function cardSelect(e) {
     <select onchange="post('/api/select/${esc(e.id)}',{option:this.value})">${opts}</select>`);
 }
 
-// Button
 function cardButton(e) {
   return card(e.id, `
     <div class="card-header">
@@ -748,58 +578,6 @@ function cardButton(e) {
     <button class="btn" onclick="post('/api/button/${esc(e.id)}')">Press</button>`);
 }
 
-// ── OTA section ─────────────────────────────────────────────────────────────
-function renderOTA(main) {
-  const d = document.createElement('div');
-  d.className = 'ota-card';
-  d.innerHTML = `
-    <div style="font-weight:600;font-size:16px;margin-bottom:4px">Over-the-air update</div>
-    <div style="color:var(--text2);font-size:13px;margin-bottom:12px">Upload a compiled .bin firmware file</div>
-    <div class="ota-drop" id="ota-drop" onclick="document.getElementById('ota-file').click()">
-      <div style="font-size:28px;margin-bottom:8px">📦</div>
-      <div>Drop .bin here or click to browse</div>
-    </div>
-    <input type="file" id="ota-file" accept=".bin" style="display:none" onchange="doOTA(this.files[0])">
-    <progress id="ota-progress" value="0" max="100" style="display:none"></progress>
-    <div id="ota-status" style="font-size:13px;color:var(--text2);margin-top:8px"></div>
-  `;
-  main.appendChild(d);
-
-  const drop = d.querySelector('#ota-drop');
-  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
-  drop.addEventListener('drop', e => {
-    e.preventDefault(); drop.classList.remove('drag');
-    if (e.dataTransfer.files[0]) doOTA(e.dataTransfer.files[0]);
-  });
-}
-
-async function doOTA(file) {
-  if (!file) return;
-  const status = document.getElementById('ota-status');
-  const progress = document.getElementById('ota-progress');
-  progress.style.display = 'block';
-  status.textContent = `Uploading ${file.name}…`;
-
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/ota');
-  xhr.upload.onprogress = e => {
-    if (e.lengthComputable) progress.value = (e.loaded / e.total * 100).toFixed(0);
-  };
-  xhr.onload = () => {
-    if (xhr.status === 200) {
-      status.textContent = 'OTA success — device rebooting…';
-      status.style.color = 'var(--on)';
-    } else {
-      status.textContent = 'OTA failed: ' + xhr.responseText;
-      status.style.color = 'var(--warn)';
-    }
-  };
-  xhr.onerror = () => { status.textContent = 'Upload error'; status.style.color = 'var(--warn)'; };
-  xhr.send(file);
-}
-
-// ── Live card patching (no full re-render on SSE update) ──────────────────
 function updateCard(entity) {
   const typeMap = {
     switch: 'switches', light: 'lights', sensor: 'sensors',
@@ -815,12 +593,10 @@ function updateCard(entity) {
   if (newCard) existing.replaceWith(newCard);
 }
 
-// ── XSS escape ──────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Boot ─────────────────────────────────────────────────────────────────────
 connect();
 </script>
 </body>

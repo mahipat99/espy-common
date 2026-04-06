@@ -4,7 +4,6 @@
 #include "esphome/components/web_server_base/web_server_base.h"
 #include "esphome/core/application.h"
 #include "esphome/core/entity_base.h"
-#include "esphome/components/network/ip_address.h"
 #include "web_ui_data.h"  // auto-generated embedded SPA
 
 #ifdef USE_SWITCH
@@ -12,6 +11,8 @@
 #endif
 #ifdef USE_LIGHT
 #include "esphome/components/light/light_state.h"
+#include "esphome/components/light/light_traits.h"
+#include "esphome/components/light/light_color_values.h"
 #endif
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
@@ -66,12 +67,9 @@ class WebServerCustom : public Component {
     auth_pass_ = pass;
   }
 
-
  protected:
-  // HTTP route handlers
   void handle_index(AsyncWebServerRequest *request);
   void handle_state(AsyncWebServerRequest *request);
-  void handle_events(AsyncWebServerRequest *request);
   void handle_switch_toggle(AsyncWebServerRequest *request, const String &entity_id);
   void handle_light_set(AsyncWebServerRequest *request, const String &entity_id);
   void handle_fan_set(AsyncWebServerRequest *request, const String &entity_id);
@@ -79,47 +77,40 @@ class WebServerCustom : public Component {
   void handle_select_set(AsyncWebServerRequest *request, const String &entity_id);
   void handle_climate_set(AsyncWebServerRequest *request, const String &entity_id);
   void handle_button_press(AsyncWebServerRequest *request, const String &entity_id);
-  void handle_not_found(AsyncWebServerRequest *request);
 
-  // SSE helpers
-  void broadcast_state_change(const std::string &entity_type,
-                               const std::string &entity_id,
-                               JsonObject &state_obj);
   void send_full_state(AsyncEventSourceClient *client);
-
-  // JSON builders
   void build_all_entities_json(JsonDocument &doc);
 
 #ifdef USE_SWITCH
-  void build_switch_json(JsonObject &obj, switch_::Switch *sw);
+  void build_switch_json(JsonObject obj, switch_::Switch *sw);
 #endif
 #ifdef USE_LIGHT
-  void build_light_json(JsonObject &obj, light::LightState *light);
+  void build_light_json(JsonObject obj, light::LightState *light);
 #endif
 #ifdef USE_SENSOR
-  void build_sensor_json(JsonObject &obj, sensor::Sensor *sensor);
+  void build_sensor_json(JsonObject obj, sensor::Sensor *sensor);
 #endif
 #ifdef USE_BINARY_SENSOR
-  void build_binary_sensor_json(JsonObject &obj, binary_sensor::BinarySensor *bs);
+  void build_binary_sensor_json(JsonObject obj, binary_sensor::BinarySensor *bs);
 #endif
 #ifdef USE_TEXT_SENSOR
-  void build_text_sensor_json(JsonObject &obj, text_sensor::TextSensor *ts);
+  void build_text_sensor_json(JsonObject obj, text_sensor::TextSensor *ts);
 #endif
 #ifdef USE_CLIMATE
-  void build_climate_json(JsonObject &obj, climate::Climate *climate);
+  void build_climate_json(JsonObject obj, climate::Climate *climate);
 #endif
 #ifdef USE_FAN
-  void build_fan_json(JsonObject &obj, fan::Fan *fan);
+  void build_fan_json(JsonObject obj, fan::Fan *fan);
 #endif
 #ifdef USE_NUMBER
-  void build_number_json(JsonObject &obj, number::Number *number);
+  void build_number_json(JsonObject obj, number::Number *number);
 #endif
 #ifdef USE_SELECT
-  void build_select_json(JsonObject &obj, select::Select *select);
+  void build_select_json(JsonObject obj, select::Select *select);
 #endif
 
-  // Auth
   bool check_auth(AsyncWebServerRequest *request);
+  static std::string make_id(const std::string &name);
 
   uint16_t port_{80};
   std::string auth_user_;
