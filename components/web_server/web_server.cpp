@@ -169,6 +169,7 @@ void WebServerCustom::setup() {
 
 #ifdef USE_BINARY_SENSOR
   for (auto *bs : App.get_binary_sensors()) {
+    if (bs->is_internal()) continue;
     bs->add_on_state_callback([this, bs](bool) {
       JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
@@ -450,9 +451,10 @@ void WebServerCustom::build_all_entities_json(JsonDocument &doc) {
 #endif
 
 #ifdef USE_BINARY_SENSOR
-  JsonArray binary_sensors = root.createNestedArray("binary_sensors");
+  JsonArray binary_sensors = root["binary_sensors"].to<JsonArray>();
   for (auto *bs : App.get_binary_sensors()) {
-    JsonObject obj = binary_sensors.createNestedObject();
+    if (bs->is_internal()) continue;
+    JsonObject obj = binary_sensors.add<JsonObject>();
     build_binary_sensor_json(obj, bs);
   }
 #endif
@@ -510,7 +512,9 @@ void WebServerCustom::build_all_entities_json(JsonDocument &doc) {
 
 #ifdef USE_SWITCH
 void WebServerCustom::build_switch_json(JsonObject &obj, switch_::Switch *sw) {
-  obj["id"] = sw->get_object_id().c_str();
+  char object_id[128];
+  auto ref = sw->get_object_id_to(object_id);
+  obj["id"] = ref.c_str();
   obj["name"] = sw->get_name().c_str();
   obj["type"] = "switch";
   obj["state"] = sw->state;
@@ -545,12 +549,20 @@ void WebServerCustom::build_light_json(JsonObject &obj, light::LightState *light
 
 #ifdef USE_SENSOR
 void WebServerCustom::build_sensor_json(JsonObject &obj, sensor::Sensor *sensor) {
-  obj["id"] = sensor->get_object_id().c_str();
+  char object_id[128];
+  auto id_ref = sensor->get_object_id_to(object_id);
+  obj["id"] = id_ref.c_str();
   obj["name"] = sensor->get_name().c_str();
   obj["type"] = "sensor";
   obj["unit"] = sensor->get_unit_of_measurement().c_str();
-  obj["device_class"] = sensor->get_device_class().c_str();
+  char device_class[48];
+  const char *dc = sensor->get_device_class_to(device_class);
+  if (dc != nullptr) {
+    obj["device_class"] = dc;
+  }
+
   obj["state_class"] = sensor->get_state_class();
+
   if (sensor->has_state()) {
     obj["state"] = sensor->get_state();
   } else {
@@ -561,11 +573,20 @@ void WebServerCustom::build_sensor_json(JsonObject &obj, sensor::Sensor *sensor)
 
 #ifdef USE_BINARY_SENSOR
 void WebServerCustom::build_binary_sensor_json(JsonObject &obj,
-                                                binary_sensor::BinarySensor *bs) {
-  obj["id"] = bs->get_object_id().c_str();
+                                               binary_sensor::BinarySensor *bs) {
+  char object_id[128];
+  auto id_ref = bs->get_object_id_to(object_id);
+  obj["id"] = id_ref.c_str();
+
   obj["name"] = bs->get_name().c_str();
   obj["type"] = "binary_sensor";
-  obj["device_class"] = bs->get_device_class().c_str();
+
+  char device_class[48];
+  const char *dc = bs->get_device_class_to(device_class);
+  if (dc != nullptr) {
+    obj["device_class"] = dc;
+  }
+
   obj["state"] = bs->state;
 }
 #endif

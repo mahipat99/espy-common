@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPHome</title>
+<div class="device-name" id="device-name">ESPHome</div>
 <style>
   :root {
     --bg: #0f1117;
@@ -408,8 +409,9 @@ function connect() {
     try {
       state = JSON.parse(e.data);
       dot.classList.add('connected');
-      document.getElementById('device-name').textContent =
-        state.friendly_name || state.device_name || 'ESPHome';
+      const name = state.friendly_name || state.device_name || 'ESPHome';
+      document.getElementById('device-name').textContent = name;
+      document.title = name;
       document.getElementById('loader').style.opacity = '0';
       setTimeout(() => document.getElementById('loader').remove(), 400);
       renderAll();
