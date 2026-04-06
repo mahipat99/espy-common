@@ -4,6 +4,7 @@
 #include "esphome/components/web_server_base/web_server_base.h"
 #include "esphome/core/application.h"
 #include "esphome/core/entity_base.h"
+#include "esphome/components/wifi/wifi_component.h"
 #include "web_ui_data.h"  // auto-generated embedded SPA
 
 #ifdef USE_SWITCH
