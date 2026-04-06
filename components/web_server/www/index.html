@@ -6,7 +6,7 @@
 <title>ESPHome</title>
 <style>
   :root {
-  --bg: #0f1117;
+    --bg: #0f1117;
     --surface: #1a1d27;
     --surface2: #232736;
     --border: #2e3245;
@@ -21,19 +21,7 @@
     --radius-sm: 8px;
     --transition: 0.18s ease;
   }
-  
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  
-  html, body {
-    width: 100%;
-  }
-  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
@@ -41,13 +29,14 @@
     min-height: 100vh;
     font-size: 15px;
   }
-  
-  /* ── Header ───────────────────────────────── */
+
+  /* ── Header ─────────────────────────────────────────────────────────── */
   header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 0 16px;
     width: 100%;
+    box-sizing: border-box;
     height: 56px;
     display: flex;
     align-items: center;
@@ -56,214 +45,317 @@
     top: 0;
     z-index: 100;
   }
-  
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .logo {
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
-  }
-  
-  .device-name {
-    font-weight: 600;
-    font-size: 16px;
-  }
-  
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo { width: 28px; height: 28px; }
+  .device-name { font-weight: 600; font-size: 16px; }
   .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--off);
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--off); flex-shrink: 0;
+    transition: background var(--transition);
   }
-  
-  .status-dot.connected {
-    background: var(--on);
-    box-shadow: 0 0 8px var(--on);
-  }
-  
-  .uptime {
-    color: var(--text2);
-    font-size: 13px;
-  }
-  
-  /* ── Tabs ───────────────────────────────── */
+  .status-dot.connected { background: var(--on); box-shadow: 0 0 8px var(--on); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .uptime { color: var(--text2); font-size: 13px; }
+
+  /* ── Tabs ────────────────────────────────────────────────────────────── */
   .tabs {
     display: flex;
     gap: 4px;
     padding: 12px 16px 0;
     border-bottom: 1px solid var(--border);
-    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
-  
   .tab {
-    padding: 8px 14px;
+    padding: 8px 16px;
     border-radius: var(--radius-sm) var(--radius-sm) 0 0;
     background: none;
     border: none;
     color: var(--text2);
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
     white-space: nowrap;
+    transition: color var(--transition), background var(--transition);
     position: relative;
   }
-  
-  .tab.active {
-    color: var(--text);
-    background: var(--surface);
-  }
-  
+  .tab.active { color: var(--text); background: var(--surface); }
   .tab.active::after {
     content: '';
     position: absolute;
     bottom: -1px;
-    left: 0;
-    right: 0;
+    left: 0; right: 0;
     height: 2px;
     background: var(--accent);
   }
-  
   .tab-count {
     background: var(--border);
+    color: var(--text2);
     border-radius: 99px;
-    padding: 1px 6px;
+    padding: 1px 7px;
     font-size: 11px;
     margin-left: 4px;
   }
-  
-  /* ── Layout ─────────────────────────────── */
+
+  /* ── Main grid ───────────────────────────────────────────────────────── */
   main {
-    width: 100%;
+    padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    width: 100%;
   }
-  
-  /* ── Grid ─────────────────────────────── */
-  .grid,
-  .grid-wide {
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .grid {
     display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 12px;
   }
-  
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  }
-  
   .grid-wide {
+    display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
   }
-  
-  /* ── Card ─────────────────────────────── */
+
+  /* ── Card ────────────────────────────────────────────────────────────── */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 16px;
+    transition: border-color var(--transition);
   }
-  
+  .card:hover { border-color: #3d4260; }
   .card-header {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
+    align-items: flex-start;
     margin-bottom: 12px;
+    gap: 8px;
   }
-  
-  .card-title {
-    font-weight: 600;
-    font-size: 14px;
-  }
-  
-  .card-meta {
-    color: var(--text2);
-    font-size: 12px;
-  }
-  
-  /* ── Toggle ───────────────────────────── */
+  .card-title { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .card-meta { color: var(--text2); font-size: 12px; margin-top: 2px; }
+
+  /* ── Toggle switch ───────────────────────────────────────────────────── */
   .toggle {
-    position: relative;
-    width: 44px;
-    height: 24px;
+    position: relative; width: 44px; height: 24px; flex-shrink: 0;
   }
-  
-  .toggle input {
-    display: none;
-  }
-  
+  .toggle input { opacity: 0; width: 0; height: 0; }
   .toggle-track {
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: var(--off);
     border-radius: 99px;
+    cursor: pointer;
+    transition: background var(--transition);
   }
-  
+  .toggle input:checked + .toggle-track { background: var(--accent); }
   .toggle-track::after {
     content: '';
     position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    background: #fff;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    background: white;
     border-radius: 50%;
     transition: transform var(--transition);
   }
-  
-  .toggle input:checked + .toggle-track {
-    background: var(--accent);
-  }
-  
-  .toggle input:checked + .toggle-track::after {
-    transform: translateX(20px);
-  }
-  
-  /* ── Sensor ───────────────────────────── */
+  .toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+
+  /* ── Sensor value ────────────────────────────────────────────────────── */
   .sensor-value {
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 28px; font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1;
   }
-  
-  .sensor-unit {
-    color: var(--text2);
-    font-size: 14px;
-  }
-  
-  /* ── Inputs ───────────────────────────── */
+  .sensor-unit { color: var(--text2); font-size: 14px; margin-left: 3px; }
+  .sensor-ok { color: var(--text); }
+  .sensor-null { color: var(--off); font-size: 18px; }
+
+  /* ── Range slider ────────────────────────────────────────────────────── */
   input[type=range] {
+    -webkit-appearance: none;
     width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
   }
-  
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform var(--transition);
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .range-label {
+    display: flex; justify-content: space-between;
+    color: var(--text2); font-size: 12px; margin-bottom: 4px;
+  }
+
+  /* ── Color picker ────────────────────────────────────────────────────── */
+  .color-row { display: flex; align-items: center; gap: 8px; }
+  input[type=color] {
+    -webkit-appearance: none;
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    background: var(--surface2);
+    cursor: pointer;
+  }
+
+  /* ── Select dropdown ─────────────────────────────────────────────────── */
   select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 14px;
     width: 100%;
+    cursor: pointer;
   }
-  
-  /* ── Misc ───────────────────────────── */
-  .empty {
+  select:focus { outline: 2px solid var(--accent); }
+
+  /* ── Number input ────────────────────────────────────────────────────── */
+  .number-control {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .num-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); width: 32px; height: 32px;
+    border-radius: var(--radius-sm); font-size: 18px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition);
+  }
+  .num-btn:hover { background: var(--border); }
+  .num-val { flex: 1; text-align: center; font-weight: 600; font-size: 16px; }
+
+  /* ── Button ──────────────────────────────────────────────────────────── */
+  .btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 16px;
+    border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+    cursor: pointer; width: 100%;
+    transition: background var(--transition), border-color var(--transition);
+  }
+  .btn:hover { background: var(--border); border-color: var(--accent); }
+  .btn:active { transform: scale(0.97); }
+
+  /* ── Climate card ────────────────────────────────────────────────────── */
+  .climate-temp {
+    font-size: 36px; font-weight: 700; text-align: center;
+    margin: 8px 0;
+  }
+  .climate-action {
     text-align: center;
-    padding: 40px;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+  .climate-modes {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 6px 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2); font-size: 12px;
+    cursor: pointer; text-align: center;
+    transition: all var(--transition);
+  }
+  .mode-btn.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── Light RGB preview ───────────────────────────────────────────────── */
+  .light-color-preview {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ── Effects chips ───────────────────────────────────────────────────── */
+  .effects-wrap {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px;
+  }
+  .effect-chip {
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 12px; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .effect-chip.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── Empty state ─────────────────────────────────────────────────────── */
+  .empty {
+    text-align: center; padding: 48px 20px;
     color: var(--text2);
   }
-  
-  /* ── Mobile ─────────────────────────── */
+
+  /* ── Loader ──────────────────────────────────────────────────────────── */
+  #loader {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    font-size: 14px; color: var(--text2);
+    z-index: 999;
+    transition: opacity 0.4s;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── OTA ─────────────────────────────────────────────────────────────── */
+  .ota-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    max-width: 400px;
+  }
+  .ota-drop {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 32px;
+    text-align: center;
+    color: var(--text2);
+    cursor: pointer;
+    transition: border-color var(--transition);
+    margin: 12px 0;
+  }
+  .ota-drop:hover, .ota-drop.drag { border-color: var(--accent); color: var(--text); }
+  progress {
+    width: 100%; height: 6px; border-radius: 3px;
+    appearance: none; margin-top: 8px;
+  }
+  progress::-webkit-progress-bar { background: var(--border); border-radius: 3px; }
+  progress::-webkit-progress-value { background: var(--accent); border-radius: 3px; }
+
   @media (max-width: 480px) {
-    main {
-      padding: 12px;
-    }
-  
-    .grid,
-    .grid-wide {
-      grid-template-columns: 1fr;
-    }
+    .grid { grid-template-columns: 1fr; }
+    .grid-wide { grid-template-columns: 1fr; }
+    main { padding: 12px; }
   }
 </style>
 </head>
