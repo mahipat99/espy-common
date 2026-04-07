@@ -325,6 +325,7 @@ void WebServerCustom::setup() {
   // ── Entity callbacks → SSE push ──────────────────────────────────────────
 #ifdef USE_SWITCH
   for (auto *sw : App.get_switches()) {
+    if (sw->is_internal()) continue;
     sw->add_on_state_callback([this, sw](bool) {
       JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
@@ -337,6 +338,7 @@ void WebServerCustom::setup() {
 
 #ifdef USE_LIGHT
   for (auto *light : App.get_lights()) {
+    if (light->is_internal()) continue;
     auto *listener = new LightChangeListener([this, light]() {
       JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
@@ -350,6 +352,7 @@ void WebServerCustom::setup() {
 
 #ifdef USE_SENSOR
   for (auto *sensor : App.get_sensors()) {
+    if (sensor->is_internal()) continue;
     sensor->add_on_state_callback([this, sensor](float) {
       JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
@@ -362,6 +365,7 @@ void WebServerCustom::setup() {
 
 #ifdef USE_BINARY_SENSOR
   for (auto *bs : App.get_binary_sensors()) {
+    if (bs->is_internal()) continue;
     bs->add_on_state_callback([this, bs](bool) {
       JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
@@ -374,6 +378,7 @@ void WebServerCustom::setup() {
 
 #ifdef USE_TEXT_SENSOR
   for (auto *ts : App.get_text_sensors()) {
+    if (ts->is_internal()) continue;
     ts->add_on_state_callback([this, ts](const std::string &) {
       JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
@@ -573,52 +578,71 @@ void WebServerCustom::build_all_entities_json(JsonDocument &doc) {
 
 #ifdef USE_SWITCH
   JsonArray switches = root["switches"].to<JsonArray>();
-  for (auto *sw : App.get_switches())
+  for (auto *sw : App.get_switches()) {
+    if (sw->is_internal()) continue;
     build_switch_json(switches.add<JsonObject>(), sw);
+  }
 #endif
 #ifdef USE_LIGHT
   JsonArray lights = root["lights"].to<JsonArray>();
-  for (auto *light : App.get_lights())
+  for (auto *light : App.get_lights()) {
+    if (light->is_internal()) continue;
     build_light_json(lights.add<JsonObject>(), light);
+  }
 #endif
 #ifdef USE_SENSOR
   JsonArray sensors = root["sensors"].to<JsonArray>();
-  for (auto *sensor : App.get_sensors())
+  for (auto *sensor : App.get_sensors()) {
+    if (sensor->is_internal()) continue;
     build_sensor_json(sensors.add<JsonObject>(), sensor);
+  }
 #endif
 #ifdef USE_BINARY_SENSOR
   JsonArray binary_sensors = root["binary_sensors"].to<JsonArray>();
-  for (auto *bs : App.get_binary_sensors())
+  for (auto *bs : App.get_binary_sensors()) {
+    if (bs->is_internal()) continue;
     build_binary_sensor_json(binary_sensors.add<JsonObject>(), bs);
+  }
 #endif
 #ifdef USE_TEXT_SENSOR
   JsonArray text_sensors = root["text_sensors"].to<JsonArray>();
-  for (auto *ts : App.get_text_sensors())
+  for (auto *ts : App.get_text_sensors()) {
+    if (ts->is_internal()) continue;
     build_text_sensor_json(text_sensors.add<JsonObject>(), ts);
+  }
 #endif
 #ifdef USE_CLIMATE
   JsonArray climates = root["climates"].to<JsonArray>();
-  for (auto *climate : App.get_climates())
+  for (auto *climate : App.get_climates()) {
+    if (climate->is_internal()) continue;
     build_climate_json(climates.add<JsonObject>(), climate);
+  }
 #endif
 #ifdef USE_FAN
   JsonArray fans = root["fans"].to<JsonArray>();
-  for (auto *fan : App.get_fans())
+  for (auto *fan : App.get_fans()) {
+    if (fan->is_internal()) continue;
     build_fan_json(fans.add<JsonObject>(), fan);
+  }
 #endif
 #ifdef USE_NUMBER
   JsonArray numbers = root["numbers"].to<JsonArray>();
-  for (auto *number : App.get_numbers())
+  for (auto *number : App.get_numbers()) {
+    if (number->is_internal()) continue;
     build_number_json(numbers.add<JsonObject>(), number);
+  }
 #endif
 #ifdef USE_SELECT
   JsonArray selects = root["selects"].to<JsonArray>();
-  for (auto *select : App.get_selects())
+  for (auto *select : App.get_selects()) {
+    if (select->is_internal()) continue;
     build_select_json(selects.add<JsonObject>(), select);
+  }
 #endif
 #ifdef USE_BUTTON
   JsonArray buttons = root["buttons"].to<JsonArray>();
   for (auto *button : App.get_buttons()) {
+    if (button->is_internal()) continue;
     JsonObject obj = buttons.add<JsonObject>();
     obj["id"]   = make_id(button->get_name()).c_str();
     obj["name"] = button->get_name().c_str();
