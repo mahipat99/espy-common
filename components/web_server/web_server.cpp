@@ -173,8 +173,7 @@ void WebServerCustom::setup() {
   // ── Captive portal probe URLs — redirect to /setup when in AP mode ──────
   // iOS: /hotspot-detect.html, Android: /generate_204, Windows: /ncsi.txt
   auto captive_redirect = [](AsyncWebServerRequest *req) {
-    if (wifi::global_wifi_component->is_ap_enabled() &&
-        !wifi::global_wifi_component->is_connected()) {
+    if (!wifi::global_wifi_component->is_connected()) {
       req->redirect("http://" + req->host() + "/setup");
     } else {
       req->send(204);
