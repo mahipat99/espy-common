@@ -49,7 +49,6 @@ class IDFBackend : public IWebServer {
     ESP_LOGCONFIG(TAG_IDF, "Web server started on port %u", parent_->get_port());
   }
 
-  // 🔥 send SSE event
   void send_event(const char *data, const char *event_type) override {
     std::string frame = "event: ";
     frame += event_type;
@@ -63,7 +62,7 @@ class IDFBackend : public IWebServer {
       int ret = httpd_socket_send(server_, it->fd, frame.c_str(), frame.size(), 0);
 
       if (ret < 0) {
-        httpd_sess_trigger_close(server_, it->fd);  // 🔥 cleanup
+        httpd_sess_trigger_close(server_, it->fd);
         it = clients_.erase(it);
       } else {
         ++it;
@@ -111,9 +110,6 @@ class IDFBackend : public IWebServer {
     return ESP_OK;
   }
 
-  // ─────────────────────────────────────────────
-  // ✅ STABLE SSE HANDLER (NON-BLOCKING)
-  // ─────────────────────────────────────────────
   static esp_err_t h_events(httpd_req_t *req) {
     auto *self = static_cast<IDFBackend *>(req->user_ctx);
     set_cors(req);
@@ -123,12 +119,12 @@ class IDFBackend : public IWebServer {
     httpd_resp_set_hdr(req, "Connection", "keep-alive");
     httpd_resp_set_hdr(req, "X-Accel-Buffering", "no");
 
+    httpd_resp_send_chunk(req, "", 0);
     int fd = httpd_req_to_sockfd(req);
 
     {
       std::lock_guard<std::mutex> lock(self->sse_mutex_);
 
-      // 🔥 limit clients (prevents error 23)
       if (self->clients_.size() >= 5) {
         httpd_sess_trigger_close(self->server_, fd);
         return ESP_FAIL;
@@ -137,7 +133,6 @@ class IDFBackend : public IWebServer {
       self->clients_.push_back({fd});
     }
 
-    // 🔥 send initial full state
     JsonDocument doc;
     self->parent_->build_all_entities_json(doc);
 
@@ -147,7 +142,6 @@ class IDFBackend : public IWebServer {
     std::string init = "event: full_state\ndata: " + payload + "\n\n";
     httpd_socket_send(self->server_, fd, init.c_str(), init.size(), 0);
 
-    // ❗ DO NOT BLOCK
     return ESP_OK;
   }
 
