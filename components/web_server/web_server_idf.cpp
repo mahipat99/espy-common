@@ -62,7 +62,7 @@ struct SseClient {
 // ---------------------------------------------------------------------------
 // IDF backend
 // ---------------------------------------------------------------------------
-class IDFBackend : public IWebServerBackend {
+class IDFBackend : public IWebServer {
  public:
   IDFBackend(WebServerCustom *parent) : parent_(parent) {}
 
@@ -425,7 +425,7 @@ class IDFBackend : public IWebServerBackend {
   }
 };
 
-IWebServerBackend *make_idf_backend(WebServerCustom *parent) {
+IWebServer *make_idf_server(WebServerCustom *parent, uint16_t port) {
   return new IDFBackend(parent);
 }
 

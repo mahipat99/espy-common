@@ -11,7 +11,9 @@ class IWebServer {
  public:
   virtual ~IWebServer() = default;
 
-  virtual void begin() = 0;
+  virtual void start() = 0;
+
+  virtual void send_event(const char *data, const char *event_type) = 0;
 };
 
 }  // namespace web_server_custom
