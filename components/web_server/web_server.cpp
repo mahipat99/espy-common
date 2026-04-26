@@ -161,9 +161,6 @@ function esc(s){
 
 WebServerCustom::WebServerCustom() {}
 
-// ---------------------------------------------------------------------------
-// setup
-// ---------------------------------------------------------------------------
 void WebServerCustom::setup() {
   ESP_LOGCONFIG(TAG, "Setting up custom web server on port %u", port_);
 
@@ -176,9 +173,17 @@ void WebServerCustom::setup() {
   return;
 #endif
 
-  backend_->begin();
+  App.scheduler.set_interval(this, "wait_wifi", 500, [this]() {
+    if (wifi::global_wifi_component != nullptr &&
+        wifi::global_wifi_component->is_connected()) {
 
-  ESP_LOGCONFIG(TAG, "Web server backend started");
+      ESP_LOGI(TAG, "WiFi connected, starting web server");
+
+      backend_->begin();
+
+      App.scheduler.cancel_interval(this, "wait_wifi");
+    }
+  });
 }
 
 void WebServerCustom::loop() {}
