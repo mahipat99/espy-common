@@ -109,6 +109,7 @@ class WebServerCustom : public Component {
 
   void register_entity_callbacks();
 
+  uint16_t get_port() const { return port_; }
   uint16_t port_{80};
   std::string auth_user_;
   std::string auth_pass_;

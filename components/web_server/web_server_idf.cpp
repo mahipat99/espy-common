@@ -69,7 +69,7 @@ class IDFBackend : public IWebServer {
 
   void start() override {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port    = parent_->port_;
+    config.server_port = parent_->get_port();
     config.max_uri_handlers = 24;
     // Allow wildcard URI matching for /api/* paths
     config.uri_match_fn   = httpd_uri_match_wildcard;
@@ -80,7 +80,7 @@ class IDFBackend : public IWebServer {
     }
 
     register_routes();
-    ESP_LOGCONFIG(TAG_IDF, "IDF web server started on port %u", parent_->port_);
+    ESP_LOGCONFIG(TAG_IDF, "IDF web server started on port %u", parent_->get_port());
   }
 
   void send_event(const char *data, const char *event_type) override {
