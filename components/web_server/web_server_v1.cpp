@@ -1,3 +1,5 @@
+#if defined(ESP32) || defined(ESP8266)
+
 #include "web_server.h"
 #include "esphome/core/application.h"
 
@@ -264,4 +266,6 @@ void WebServer::handle_index_request(AsyncWebServerRequest *request) {
 }
 
 }  // namespace esphome::web_server
+#endif
+
 #endif

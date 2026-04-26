@@ -1,3 +1,5 @@
+#if defined(ESP32) || defined(ESP8266)
+
 #include "web_server.h"
 #include "esphome/core/log.h"
 #include "esphome/core/application.h"
@@ -753,3 +755,5 @@ void WebServerCustom::build_select_json(JsonObject obj, select::Select *select) 
 
 }  // namespace web_server_custom
 }  // namespace esphome
+
+#endif
