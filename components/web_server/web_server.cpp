@@ -1,6 +1,7 @@
+#include "web_server.h"
+
 #if defined(ESP32) || defined(ESP8266)
 
-#include "web_server.h"
 #include "esphome/core/log.h"
 #include "esphome/core/application.h"
 #include "esphome/core/util.h"
@@ -20,7 +21,7 @@ std::string WebServerCustom::make_id(const std::string &name) {
   return id;
 }
 
-static std::string safe_device_class(EntityBase *e) {
+static std::string safe_device_class(const EntityBase *e)
   char buf[48] = {};
   e->get_device_class_to(buf);
   return std::string(buf);
@@ -752,6 +753,20 @@ void WebServerCustom::build_select_json(JsonObject obj, select::Select *select) 
   obj["state"] = select->state.c_str();
 }
 #endif
+
+}  // namespace web_server_custom
+}  // namespace esphome
+
+#else
+
+namespace esphome {
+namespace web_server_custom {
+
+WebServerCustom::WebServerCustom() {}
+
+void WebServerCustom::setup() {}
+void WebServerCustom::loop() {}
+void WebServerCustom::dump_config() {}
 
 }  // namespace web_server_custom
 }  // namespace esphome
