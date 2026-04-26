@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome/core/component.h"
+#include "web_server_backend.h"   // ✅ required for IWebServer
 #include "esphome/components/web_server_base/web_server_base.h"
 #include "esphome/core/application.h"
 #include "esphome/core/entity_base.h"
@@ -52,7 +53,6 @@
 #include <vector>
 #include <functional>
 #include <memory>
-std::unique_ptr<IWebServer> server_;
 
 namespace esphome {
 namespace web_server_custom {
@@ -126,6 +126,8 @@ class WebServerCustom : public Component {
   uint16_t port_{80};
   std::string auth_user_;
   std::string auth_pass_;
+
+  std::unique_ptr<IWebServer> backend_;
 
 #if defined(ESP32) || defined(ESP8266)
   AsyncWebServer *server_{nullptr};
