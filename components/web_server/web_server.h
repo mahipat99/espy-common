@@ -67,6 +67,8 @@ class WebServerCustom : public Component {
   float get_setup_priority() const override { return setup_priority::AFTER_WIFI; }
 
   void set_port(uint16_t port) { port_ = port; }
+  uint16_t get_port() const { return port_; }
+
   void set_auth(const std::string &user, const std::string &pass) {
     auth_user_ = user;
     auth_pass_ = pass;
@@ -78,7 +80,8 @@ class WebServerCustom : public Component {
   static std::string make_id(const std::string &name);
   static std::string safe_device_class(EntityBase *e);
 
- protected:
+  void register_entity_callbacks();
+
 #ifdef USE_SWITCH
   void build_switch_json(JsonObject obj, switch_::Switch *sw);
 #endif
@@ -107,9 +110,7 @@ class WebServerCustom : public Component {
   void build_select_json(JsonObject obj, select::Select *select);
 #endif
 
-  void register_entity_callbacks();
-
-  uint16_t get_port() const { return port_; }
+ protected:
   uint16_t port_{80};
   std::string auth_user_;
   std::string auth_pass_;
