@@ -1,8 +1,6 @@
 #pragma once
 
 #include "esphome/core/component.h"
-#include "web_server_backend.h"   // ✅ required for IWebServer
-#include "esphome/components/web_server_base/web_server_base.h"
 #include "esphome/core/application.h"
 #include "esphome/core/entity_base.h"
 #include "esphome/components/wifi/wifi_component.h"
@@ -41,21 +39,27 @@
 #include "esphome/components/button/button.h"
 #endif
 
-#if defined(ESP32)
-  #include <AsyncTCP.h>
-  #include <ESPAsyncWebServer.h>
-#elif defined(ESP8266)
-  #include <ESPAsyncTCP.h>
+// Arduino framework: ESPAsyncWebServer
+#ifdef USE_ARDUINO
+  #ifdef USE_ESP32
+    #include <AsyncTCP.h>
+  #elif defined(USE_ESP8266)
+    #include <ESPAsyncTCP.h>
+  #endif
   #include <ESPAsyncWebServer.h>
 #endif
 
+// Both frameworks use ArduinoJson
 #include <ArduinoJson.h>
-#include <vector>
+#include <string>
 #include <functional>
 #include <memory>
 
 namespace esphome {
 namespace web_server_custom {
+
+// Forward declaration for backend interface
+class IWebServerBackend;
 
 class WebServerCustom : public Component {
  public:
@@ -72,23 +76,19 @@ class WebServerCustom : public Component {
     auth_pass_ = pass;
   }
 
- protected:
+  // Called by backend to push SSE events
+  void broadcast_state(const std::string &json_str);
 
-#if defined(ESP32) || defined(ESP8266)
-
-  void handle_index(AsyncWebServerRequest *request);
-  void handle_state(AsyncWebServerRequest *request);
-  void handle_switch_toggle(AsyncWebServerRequest *request, const String &entity_id);
-  void handle_light_set(AsyncWebServerRequest *request, const String &entity_id);
-  void handle_fan_set(AsyncWebServerRequest *request, const String &entity_id);
-  void handle_number_set(AsyncWebServerRequest *request, const String &entity_id);
-  void handle_select_set(AsyncWebServerRequest *request, const String &entity_id);
-  void handle_climate_set(AsyncWebServerRequest *request, const String &entity_id);
-  void handle_button_press(AsyncWebServerRequest *request, const String &entity_id);
-
-  void send_full_state(AsyncEventSourceClient *client);
+  // Public so both backends can call these
   void build_all_entities_json(JsonDocument &doc);
+  static std::string make_id(const std::string &name);
+  static std::string safe_device_class(EntityBase *e);
 
+  uint16_t port_{80};
+  std::string auth_user_;
+  std::string auth_pass_;
+
+ protected:
 #ifdef USE_SWITCH
   void build_switch_json(JsonObject obj, switch_::Switch *sw);
 #endif
@@ -117,22 +117,20 @@ class WebServerCustom : public Component {
   void build_select_json(JsonObject obj, select::Select *select);
 #endif
 
-  bool check_auth(AsyncWebServerRequest *request);
+  void register_entity_callbacks();
 
-#endif  // ESP guard
+  std::unique_ptr<IWebServerBackend> backend_;
+};
 
-  static std::string make_id(const std::string &name);
-
-  uint16_t port_{80};
-  std::string auth_user_;
-  std::string auth_pass_;
-
-  std::unique_ptr<IWebServer> backend_;
-
-#if defined(ESP32) || defined(ESP8266)
-  AsyncWebServer *server_{nullptr};
-  AsyncEventSource *events_{nullptr};
-#endif
+// ---------------------------------------------------------------------------
+// Backend interface — implemented separately for Arduino and IDF
+// ---------------------------------------------------------------------------
+class IWebServerBackend {
+ public:
+  virtual ~IWebServerBackend() = default;
+  virtual void start() = 0;
+  // Push SSE event to all connected clients
+  virtual void send_event(const char *data, const char *event_type) = 0;
 };
 
 }  // namespace web_server_custom
