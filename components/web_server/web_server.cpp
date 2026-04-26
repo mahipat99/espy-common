@@ -12,10 +12,10 @@ static const char *TAG = "web_server_custom";
 // Forward declarations for platform backends
 // ---------------------------------------------------------------------------
 #ifdef USE_ARDUINO
-IWebServerBackend *make_arduino_backend(WebServerCustom *parent);
+IWebServer *make_arduino_server(WebServerCustom *parent, uint16_t port);
 #endif
 #if defined(USE_ESP_IDF) || (!defined(USE_ARDUINO) && defined(ESP32))
-IWebServerBackend *make_idf_server(WebServerCustom *parent);
+IWebServer *make_idf_server(WebServerCustom *parent, uint16_t port);
 #endif
 
 // ---------------------------------------------------------------------------
@@ -62,9 +62,9 @@ void WebServerCustom::setup() {
   ESP_LOGCONFIG(TAG, "Setting up custom web server on port %u", port_);
 
 #ifdef USE_ARDUINO
-  backend_.reset(make_arduino_backend(this));
+  backend_.reset(make_arduino_server(this, port_));
 #elif defined(USE_ESP_IDF) || (!defined(USE_ARDUINO) && defined(ESP32))
-  backend_.reset(make_idf_server(this));
+  backend_.reset(make_idf_server(this, port_));
 #else
   ESP_LOGE(TAG, "No supported framework!");
   return;

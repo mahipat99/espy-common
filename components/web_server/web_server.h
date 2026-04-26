@@ -5,6 +5,7 @@
 #include "esphome/core/entity_base.h"
 #include "esphome/components/wifi/wifi_component.h"
 #include "web_ui_data.h"
+#include "web_server_backend.h"
 
 #ifdef USE_SWITCH
 #include "esphome/components/switch/switch.h"
@@ -39,7 +40,6 @@
 #include "esphome/components/button/button.h"
 #endif
 
-// Arduino framework: ESPAsyncWebServer
 #ifdef USE_ARDUINO
   #ifdef USE_ESP32
     #include <AsyncTCP.h>
@@ -49,7 +49,6 @@
   #include <ESPAsyncWebServer.h>
 #endif
 
-// Both frameworks use ArduinoJson
 #include <ArduinoJson.h>
 #include <string>
 #include <functional>
@@ -57,9 +56,6 @@
 
 namespace esphome {
 namespace web_server_custom {
-
-// Forward declaration for backend interface
-class IWebServerBackend;
 
 class WebServerCustom : public Component {
  public:
@@ -76,17 +72,11 @@ class WebServerCustom : public Component {
     auth_pass_ = pass;
   }
 
-  // Called by backend to push SSE events
   void broadcast_state(const std::string &json_str);
 
-  // Public so both backends can call these
   void build_all_entities_json(JsonDocument &doc);
   static std::string make_id(const std::string &name);
   static std::string safe_device_class(EntityBase *e);
-
-  uint16_t port_{80};
-  std::string auth_user_;
-  std::string auth_pass_;
 
  protected:
 #ifdef USE_SWITCH
@@ -119,18 +109,11 @@ class WebServerCustom : public Component {
 
   void register_entity_callbacks();
 
-  std::unique_ptr<IWebServerBackend> backend_;
-};
+  uint16_t port_{80};
+  std::string auth_user_;
+  std::string auth_pass_;
 
-// ---------------------------------------------------------------------------
-// Backend interface — implemented separately for Arduino and IDF
-// ---------------------------------------------------------------------------
-class IWebServerBackend {
- public:
-  virtual ~IWebServerBackend() = default;
-  virtual void start() = 0;
-  // Push SSE event to all connected clients
-  virtual void send_event(const char *data, const char *event_type) = 0;
+  std::unique_ptr<IWebServer> backend_;
 };
 
 }  // namespace web_server_custom
