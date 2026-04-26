@@ -270,27 +270,57 @@ function fmtUptime(s) {
 
 function connect() {
   const dot = document.getElementById('status-dot');
-  const es = new EventSource('/events');
-  es.addEventListener('full_state', e => {
+
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+
+  ws.onopen = () => {
+    dot.classList.add('connected');
+  };
+
+  ws.onmessage = (e) => {
     try {
-      state = JSON.parse(e.data);
-      dot.classList.add('connected');
-      const name = state.friendly_name || state.device_name || 'ESPHome';
-      document.getElementById('device-name').textContent = name;
-      document.title = name;
-      document.getElementById('loader').style.opacity = '0';
-      setTimeout(() => document.getElementById('loader').remove(), 400);
-      renderAll();
-    } catch(err) { console.error('full_state parse error', err); }
-  });
-  es.addEventListener('state_change', e => {
-    try {
-      const entity = JSON.parse(e.data);
-      mergeEntity(entity);
-      updateCard(entity);
-    } catch(err) { console.error('state_change parse error', err); }
-  });
-  es.onerror = () => { dot.classList.remove('connected'); };
+      const msg = JSON.parse(e.data);
+
+      // full state
+      if (msg.type === 'full_state') {
+        state = msg.data;
+
+        const name = state.friendly_name || state.device_name || 'ESPHome';
+        document.getElementById('device-name').textContent = name;
+        document.title = name;
+
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader')?.remove(), 400);
+
+        renderAll();
+      }
+
+      // state change
+      if (msg.type === 'state_change') {
+        const entity = msg.data;
+        mergeEntity(entity);
+        updateCard(entity);
+      }
+
+    } catch (err) {
+      console.error('WS parse error', err);
+    }
+  };
+
+  ws.onclose = () => {
+    dot.classList.remove('connected');
+
+    // auto reconnect
+    setTimeout(() => {
+      console.log("Reconnecting WS...");
+      connect();
+    }, 2000);
+  };
+
+  ws.onerror = () => {
+    dot.classList.remove('connected');
+    ws.close();
+  };
 }
 
 function mergeEntity(entity) {
