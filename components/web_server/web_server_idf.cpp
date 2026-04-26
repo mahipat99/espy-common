@@ -77,7 +77,7 @@ class IDFBackend : public IWebServer {
     // FIX: Larger stack for ArduinoJson serialisation; more sockets so SSE
     //      clients don't starve normal API requests (1 socket per SSE client).
     config.stack_size         = 8192;
-    config.max_open_sockets   = 10;
+    config.max_open_sockets   = 6;   // LWIP_MAX_SOCKETS=9, httpd uses 3 internally → 6 free
 
     if (httpd_start(&server_, &config) != ESP_OK) {
       ESP_LOGE(TAG_IDF, "Failed to start HTTP server");
