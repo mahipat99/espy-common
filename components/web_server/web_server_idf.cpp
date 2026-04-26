@@ -49,6 +49,9 @@ class IDFBackend : public IWebServer {
     ESP_LOGCONFIG(TAG_IDF, "Web server started on port %u", parent_->get_port());
   }
 
+  // ─────────────────────────────────────────────
+  // SEND EVENT (ASYNC)
+  // ─────────────────────────────────────────────
   void send_event(const char *data, const char *event_type) override {
     std::string frame = "event: ";
     frame += event_type;
@@ -110,6 +113,9 @@ class IDFBackend : public IWebServer {
     return ESP_OK;
   }
 
+  // ─────────────────────────────────────────────
+  // ✅ CORRECT SSE HANDLER (PERSISTENT)
+  // ─────────────────────────────────────────────
   static esp_err_t h_events(httpd_req_t *req) {
     auto *self = static_cast<IDFBackend *>(req->user_ctx);
     set_cors(req);
@@ -117,9 +123,7 @@ class IDFBackend : public IWebServer {
     httpd_resp_set_type(req, "text/event-stream");
     httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
     httpd_resp_set_hdr(req, "Connection", "keep-alive");
-    httpd_resp_set_hdr(req, "X-Accel-Buffering", "no");
 
-    httpd_resp_send_chunk(req, "", 0);
     int fd = httpd_req_to_sockfd(req);
 
     {
@@ -133,6 +137,7 @@ class IDFBackend : public IWebServer {
       self->clients_.push_back({fd});
     }
 
+    // send initial full state
     JsonDocument doc;
     self->parent_->build_all_entities_json(doc);
 
@@ -141,6 +146,23 @@ class IDFBackend : public IWebServer {
 
     std::string init = "event: full_state\ndata: " + payload + "\n\n";
     httpd_socket_send(self->server_, fd, init.c_str(), init.size(), 0);
+
+    // 🔥 KEEP CONNECTION ALIVE (REQUIRED FOR SSE)
+    while (true) {
+      vTaskDelay(pdMS_TO_TICKS(15000));
+
+      const char *ping = ": ping\n\n";
+      int ret = httpd_socket_send(self->server_, fd, ping, strlen(ping), 0);
+
+      if (ret < 0) {
+        httpd_sess_trigger_close(self->server_, fd);
+
+        std::lock_guard<std::mutex> lock(self->sse_mutex_);
+        self->clients_.remove_if([fd](const SseClient &c) { return c.fd == fd; });
+
+        break;
+      }
+    }
 
     return ESP_OK;
   }
