@@ -21,7 +21,7 @@ std::string WebServerCustom::make_id(const std::string &name) {
   return id;
 }
 
-static std::string safe_device_class(const EntityBase *e)
+static std::string safe_device_class(EntityBase *e) {
   char buf[48] = {};
   e->get_device_class_to(buf);
   return std::string(buf);
