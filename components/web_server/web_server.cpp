@@ -15,7 +15,7 @@ static const char *TAG = "web_server_custom";
 IWebServerBackend *make_arduino_backend(WebServerCustom *parent);
 #endif
 #if defined(USE_ESP_IDF) || (!defined(USE_ARDUINO) && defined(ESP32))
-IWebServerBackend *make_idf_backend(WebServerCustom *parent);
+IWebServerBackend *make_idf_server(WebServerCustom *parent);
 #endif
 
 // ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ void WebServerCustom::setup() {
 #ifdef USE_ARDUINO
   backend_.reset(make_arduino_backend(this));
 #elif defined(USE_ESP_IDF) || (!defined(USE_ARDUINO) && defined(ESP32))
-  backend_.reset(make_idf_backend(this));
+  backend_.reset(make_idf_server(this));
 #else
   ESP_LOGE(TAG, "No supported framework!");
   return;
