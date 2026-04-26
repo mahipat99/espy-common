@@ -1,6 +1,7 @@
 // web_server_idf.cpp — ESP-IDF framework backend
 #if defined(USE_ESP_IDF) || (!defined(USE_ARDUINO) && defined(ESP32))
 
+#include "web_server_backend.h"
 #include "web_server.h"
 #include "esphome/core/log.h"
 #include "esphome/core/application.h"
