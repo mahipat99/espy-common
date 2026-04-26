@@ -1,5 +1,5 @@
 // web_server_idf.cpp — ESP-IDF framework backend
-#ifdef USE_ESP_IDF
+#if defined(USE_ESP_IDF) || (!defined(USE_ARDUINO) && defined(ESP32))
 
 #include "web_server.h"
 #include "esphome/core/log.h"
@@ -432,4 +432,4 @@ IWebServerBackend *make_idf_backend(WebServerCustom *parent) {
 }  // namespace web_server_custom
 }  // namespace esphome
 
-#endif  // USE_ESP_IDF
+#endif  // USE_ESP_IDF or non-Arduino ESP32

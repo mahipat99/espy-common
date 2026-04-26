@@ -88,4 +88,8 @@ async def to_code(config):
     if config["auth_username"]:
         cg.add(var.set_auth(config["auth_username"], config["auth_password"]))
 
+    from esphome.core import CORE
+    if CORE.using_esp_idf:
+        cg.add_define("USE_ESP_IDF")
+
     cg.add_define("USE_WEBSERVER_CUSTOM")
