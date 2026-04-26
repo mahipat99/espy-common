@@ -51,6 +51,8 @@
 #include <ArduinoJson.h>
 #include <vector>
 #include <functional>
+#include <memory>
+std::unique_ptr<IWebServer> server_;
 
 namespace esphome {
 namespace web_server_custom {

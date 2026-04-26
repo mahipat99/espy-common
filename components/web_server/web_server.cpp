@@ -6,6 +6,7 @@
 #include "esphome/core/application.h"
 #include "esphome/core/util.h"
 #include "esphome/components/wifi/wifi_component.h"
+#include "web_server_backend.h"
 
 namespace esphome {
 namespace web_server_custom {
@@ -166,234 +167,18 @@ WebServerCustom::WebServerCustom() {}
 void WebServerCustom::setup() {
   ESP_LOGCONFIG(TAG, "Setting up custom web server on port %u", port_);
 
-  server_ = new AsyncWebServer(port_);
-  events_ = new AsyncEventSource("/events");
-
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  // ── Captive portal probe URLs — redirect to /setup when in AP mode ──────
-  // iOS: /hotspot-detect.html, Android: /generate_204, Windows: /ncsi.txt
-  auto captive_redirect = [](AsyncWebServerRequest *req) {
-    if (!wifi::global_wifi_component->is_connected()) {
-      req->redirect("http://" + req->host() + "/setup");
-    } else {
-      req->send(204);
-    }
-  };
-  server_->on("/hotspot-detect.html", HTTP_GET, captive_redirect);
-  server_->on("/generate_204",        HTTP_GET, captive_redirect);
-  server_->on("/ncsi.txt",            HTTP_GET, captive_redirect);
-  server_->on("/connecttest.txt",     HTTP_GET, captive_redirect);
-  server_->on("/redirect",            HTTP_GET, captive_redirect);
-  server_->on("/canonical.html",      HTTP_GET, captive_redirect);
-  server_->on("/success.txt",         HTTP_GET, captive_redirect);
-
-  // ── WiFi setup page ──────────────────────────────────────────────────────
-  server_->on("/setup", HTTP_GET, [](AsyncWebServerRequest *req) {
-    AsyncWebServerResponse *res = req->beginResponse_P(
-        200, "text/html", (const uint8_t *)WIFI_SETUP_HTML, strlen_P(WIFI_SETUP_HTML));
-    res->addHeader("Cache-Control", "no-cache");
-    req->send(res);
-  });
-
-  // WiFi scan — returns JSON array of networks
-  server_->on("/api/wifi/scan", HTTP_GET, [](AsyncWebServerRequest *req) {
-    // Trigger a scan and return cached results
-    // ESPHome's wifi component handles scanning internally;
-    // we return what it has already scanned
-    String json = "[";
-    bool first = true;
-    for (auto &net : wifi::global_wifi_component->get_scan_result()) {
-      if (!first) json += ",";
-      first = false;
-      String ssid = net.get_ssid().c_str();
-      ssid.replace("\"", "\\\"");
-      json += "{\"ssid\":\"" + ssid + "\",\"rssi\":" + String(net.get_rssi()) +
-              ",\"secure\":" + (net.get_is_hidden() ? "false" : "true") + "}";
-    }
-    json += "]";
-    req->send(200, "application/json", json);
-  });
-
-  // WiFi connect — saves credentials and reboots
-  server_->on("/api/wifi/connect", HTTP_POST, [](AsyncWebServerRequest *req) {
-    if (!req->hasParam("ssid", true)) {
-      req->send(400, "text/plain", "missing ssid");
-      return;
-    }
-    String ssid = req->getParam("ssid", true)->value();
-    String pass = req->hasParam("password", true)
-                  ? req->getParam("password", true)->value()
-                  : "";
-    // Save to ESPHome's wifi component and schedule reboot
-    // Store credentials via ESPHome preferences and reboot
-    wifi::WiFiAP sta{};
-    sta.set_ssid(ssid.c_str());
-    sta.set_password(pass.c_str());
-    wifi::global_wifi_component->set_sta(sta);
-    req->send(200, "text/plain", "ok");
-    App.scheduler.set_timeout(wifi::global_wifi_component, "wifi_reboot", 500, []() {
-      App.safe_reboot();
-    });
-  });
-
-  // ── SPA (main dashboard) ─────────────────────────────────────────────────
-  server_->on("/", HTTP_GET, [this](AsyncWebServerRequest *req) {
-    handle_index(req);
-  });
-
-  // ── REST API ─────────────────────────────────────────────────────────────
-  server_->on("/api/state", HTTP_GET, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    handle_state(req);
-  });
-
-  server_->on("/api/switch", HTTP_POST, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    String path = req->url();
-    int s = path.indexOf("/api/switch/");
-    if (s < 0) { req->send(400); return; }
-    String id = path.substring(s + 12);
-    int slash = id.indexOf('/'); if (slash >= 0) id = id.substring(0, slash);
-    handle_switch_toggle(req, id);
-  });
-
-  server_->on("/api/light", HTTP_POST, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    String path = req->url();
-    int s = path.indexOf("/api/light/");
-    if (s < 0) { req->send(400); return; }
-    handle_light_set(req, path.substring(s + 11));
-  });
-
-  server_->on("/api/fan", HTTP_POST, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    String path = req->url();
-    int s = path.indexOf("/api/fan/");
-    if (s < 0) { req->send(400); return; }
-    handle_fan_set(req, path.substring(s + 9));
-  });
-
-  server_->on("/api/number", HTTP_POST, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    String path = req->url();
-    int s = path.indexOf("/api/number/");
-    if (s < 0) { req->send(400); return; }
-    handle_number_set(req, path.substring(s + 12));
-  });
-
-  server_->on("/api/select", HTTP_POST, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    String path = req->url();
-    int s = path.indexOf("/api/select/");
-    if (s < 0) { req->send(400); return; }
-    handle_select_set(req, path.substring(s + 12));
-  });
-
-  server_->on("/api/climate", HTTP_POST, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    String path = req->url();
-    int s = path.indexOf("/api/climate/");
-    if (s < 0) { req->send(400); return; }
-    handle_climate_set(req, path.substring(s + 13));
-  });
-
-  server_->on("/api/button", HTTP_POST, [this](AsyncWebServerRequest *req) {
-    if (!check_auth(req)) return;
-    String path = req->url();
-    int s = path.indexOf("/api/button/");
-    if (s < 0) { req->send(400); return; }
-    handle_button_press(req, path.substring(s + 12));
-  });
-
-  server_->on("/", HTTP_OPTIONS, [](AsyncWebServerRequest *req) { req->send(204); });
-
-  // ── SSE ──────────────────────────────────────────────────────────────────
-  events_->onConnect([this](AsyncEventSourceClient *client) {
-    ESP_LOGD(TAG, "SSE client connected");
-    send_full_state(client);
-  });
-  server_->addHandler(events_);
-
-  // ── 404: /api/* → JSON, everything else → plain 404 ─────────────────────
-  server_->onNotFound([](AsyncWebServerRequest *req) {
-    if (req->url().startsWith("/api/"))
-      req->send(404, "application/json", "{\"error\":\"not found\"}");
-    else
-      req->send(404);
-  });
-
-  // ── Entity callbacks → SSE push ──────────────────────────────────────────
-#ifdef USE_SWITCH
-  for (auto *sw : App.get_switches()) {
-    if (sw->is_internal()) continue;
-    sw->add_on_state_callback([this, sw](bool) {
-      JsonDocument doc;
-      JsonObject obj = doc.to<JsonObject>();
-      build_switch_json(obj, sw);
-      String out; serializeJson(doc, out);
-      events_->send(out.c_str(), "state_change", millis());
-    });
-  }
-#endif
-
-#ifdef USE_LIGHT
-  for (auto *light : App.get_lights()) {
-    if (light->is_internal()) continue;
-    auto *listener = new LightChangeListener([this, light]() {
-      JsonDocument doc;
-      JsonObject obj = doc.to<JsonObject>();
-      build_light_json(obj, light);
-      String out; serializeJson(doc, out);
-      events_->send(out.c_str(), "state_change", millis());
-    });
-    light->add_target_state_reached_listener(listener);
-  }
-#endif
-
-#ifdef USE_SENSOR
-  for (auto *sensor : App.get_sensors()) {
-    if (sensor->is_internal()) continue;
-    sensor->add_on_state_callback([this, sensor](float) {
-      JsonDocument doc;
-      JsonObject obj = doc.to<JsonObject>();
-      build_sensor_json(obj, sensor);
-      String out; serializeJson(doc, out);
-      events_->send(out.c_str(), "state_change", millis());
-    });
-  }
-#endif
-
-#ifdef USE_BINARY_SENSOR
-  for (auto *bs : App.get_binary_sensors()) {
-    if (bs->is_internal()) continue;
-    bs->add_on_state_callback([this, bs](bool) {
-      JsonDocument doc;
-      JsonObject obj = doc.to<JsonObject>();
-      build_binary_sensor_json(obj, bs);
-      String out; serializeJson(doc, out);
-      events_->send(out.c_str(), "state_change", millis());
-    });
-  }
-#endif
-
-#ifdef USE_TEXT_SENSOR
-  for (auto *ts : App.get_text_sensors()) {
-    if (ts->is_internal()) continue;
-    ts->add_on_state_callback([this, ts](const std::string &) {
-      JsonDocument doc;
-      JsonObject obj = doc.to<JsonObject>();
-      build_text_sensor_json(obj, ts);
-      String out; serializeJson(doc, out);
-      events_->send(out.c_str(), "state_change", millis());
-    });
-  }
+#if defined(USE_ESP_IDF)
+  server_ = std::make_unique<IDFWebServer>(this, port_);
+#elif defined(ARDUINO)
+  server_ = std::make_unique<ArduinoWebServer>(this, port_);
+#else
+  ESP_LOGW(TAG, "No supported framework for web server");
+  return;
 #endif
 
   server_->begin();
-  ESP_LOGCONFIG(TAG, "Web server started on port %u", port_);
+
+  ESP_LOGCONFIG(TAG, "Web server backend started");
 }
 
 void WebServerCustom::loop() {}
