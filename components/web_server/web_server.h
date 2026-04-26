@@ -62,7 +62,7 @@ class WebServerCustom : public Component {
   void setup() override;
   void loop() override;
   void dump_config() override;
-  float get_setup_priority() const override { return setup_priority::WIFI - 1.0f; }
+  float get_setup_priority() const override { return setup_priority::AFTER_WIFI; }
 
   void set_port(uint16_t port) { port_ = port; }
   void set_auth(const std::string &user, const std::string &pass) {
