@@ -5,7 +5,7 @@
 #include "esphome/core/application.h"
 #include "esphome/core/entity_base.h"
 #include "esphome/components/wifi/wifi_component.h"
-#include "web_ui_data.h"  // auto-generated embedded SPA
+#include "web_ui_data.h"
 
 #ifdef USE_SWITCH
 #include "esphome/components/switch/switch.h"
@@ -40,12 +40,14 @@
 #include "esphome/components/button/button.h"
 #endif
 
-#ifdef USE_ESP32
-#include <AsyncTCP.h>
-#elif defined(USE_ESP8266)
-#include <ESPAsyncTCP.h>
+#if defined(ESP32)
+  #include <AsyncTCP.h>
+  #include <ESPAsyncWebServer.h>
+#elif defined(ESP8266)
+  #include <ESPAsyncTCP.h>
+  #include <ESPAsyncWebServer.h>
 #endif
-#include <ESPAsyncWebServer.h>
+
 #include <ArduinoJson.h>
 #include <vector>
 #include <functional>
@@ -69,6 +71,9 @@ class WebServerCustom : public Component {
   }
 
  protected:
+
+#if defined(ESP32) || defined(ESP8266)
+
   void handle_index(AsyncWebServerRequest *request);
   void handle_state(AsyncWebServerRequest *request);
   void handle_switch_toggle(AsyncWebServerRequest *request, const String &entity_id);
@@ -111,14 +116,19 @@ class WebServerCustom : public Component {
 #endif
 
   bool check_auth(AsyncWebServerRequest *request);
+
+#endif  // ESP guard
+
   static std::string make_id(const std::string &name);
 
   uint16_t port_{80};
   std::string auth_user_;
   std::string auth_pass_;
 
+#if defined(ESP32) || defined(ESP8266)
   AsyncWebServer *server_{nullptr};
   AsyncEventSource *events_{nullptr};
+#endif
 };
 
 }  // namespace web_server_custom
