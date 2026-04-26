@@ -3,16 +3,6 @@
 generate_embedded_html.py
 ─────────────────────────
 Standalone helper to (re)generate web_ui_data.h from www/index.html.
-
-Run manually when you change the frontend:
-    python generate_embedded_html.py
-
-Or invoke from your CI before pushing.  The ESPHome __init__.py also runs
-this automatically during each build.
-
-Usage:
-    python generate_embedded_html.py [--input path/to/index.html]
-                                     [--output path/to/web_ui_data.h]
 """
 
 import argparse
@@ -20,6 +10,33 @@ import gzip
 import os
 import sys
 from datetime import datetime, timezone
+
+
+# ✅ NEW: preprocess HTML before compression
+def process_html(raw: bytes) -> bytes:
+    html = raw.decode("utf-8")
+
+    # Fix title flash
+    html = html.replace(
+        "<title>ESPHome</title>",
+        "<title>Loading...</title>"
+    )
+
+    # Inject early JS (runs before UI loads)
+    inject = """
+<script>
+(function() {
+  try {
+    const name = window.location.hostname || "Device";
+    document.title = name;
+  } catch (e) {}
+})();
+</script>
+"""
+
+    html = html.replace("</head>", inject + "\n</head>")
+
+    return html.encode("utf-8")
 
 
 def generate(input_path: str, output_path: str) -> None:
@@ -30,8 +47,11 @@ def generate(input_path: str, output_path: str) -> None:
     with open(input_path, "rb") as f:
         raw = f.read()
 
-    compressed = gzip.compress(raw, compresslevel=9)
-    ratio = len(compressed) / len(raw) * 100
+    # ✅ Apply preprocessing
+    processed = process_html(raw)
+
+    compressed = gzip.compress(processed, compresslevel=9)
+    ratio = len(compressed) / len(processed) * 100
 
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     lines = [
@@ -39,10 +59,14 @@ def generate(input_path: str, output_path: str) -> None:
         "// DO NOT EDIT — regenerate with: python generate_embedded_html.py",
         "",
         "#pragma once",
+        "#ifdef ARDUINO",
         "#include <pgmspace.h>",
+        "#else",
+        "#define PROGMEM",
+        "#endif",
         "",
         f"// Source : {os.path.basename(input_path)}",
-        f"// Raw    : {len(raw):,} bytes",
+        f"// Raw    : {len(processed):,} bytes",
         f"// Gzipped: {len(compressed):,} bytes ({ratio:.1f}% of original)",
         "",
         "static const uint8_t WEB_UI_GZ[] PROGMEM = {",
@@ -65,7 +89,7 @@ def generate(input_path: str, output_path: str) -> None:
 
     print(
         f"[generate_embedded_html] "
-        f"{len(raw):,} B → {len(compressed):,} B gzipped "
+        f"{len(processed):,} B → {len(compressed):,} B gzipped "
         f"({ratio:.1f}%)  →  {output_path}"
     )
 
