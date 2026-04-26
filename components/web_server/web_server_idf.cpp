@@ -123,23 +123,9 @@ static esp_err_t h_events(httpd_req_t *req) {
   httpd_resp_set_type(req, "text/event-stream");
   httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
   httpd_resp_set_hdr(req, "Connection", "keep-alive");
-  httpd_resp_set_hdr(req, "Transfer-Encoding", "chunked");
 
-  // 🔥 START STREAM
+  // initial flush
   httpd_resp_send_chunk(req, "", 0);
-
-  int fd = httpd_req_to_sockfd(req);
-
-  {
-    std::lock_guard<std::mutex> lock(self->sse_mutex_);
-
-    if (self->clients_.size() >= 5) {
-      httpd_sess_trigger_close(self->server_, fd);
-      return ESP_FAIL;
-    }
-
-    self->clients_.push_back({fd});
-  }
 
   // send initial state
   JsonDocument doc;
@@ -148,11 +134,23 @@ static esp_err_t h_events(httpd_req_t *req) {
   std::string payload;
   serializeJson(doc, payload);
 
-  std::string init = "event: full_state\ndata: " + payload + "\n\n";
+  std::string msg = "event: full_state\ndata: " + payload + "\n\n";
+  httpd_resp_send_chunk(req, msg.c_str(), msg.size());
 
-  // 🔥 NOW THIS WILL WORK
-  httpd_socket_send(self->server_, fd, init.c_str(), init.size(), 0);
+  // 🔥 KEEP STREAM ALIVE
+  while (true) {
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
+    // ping to keep connection alive
+    const char *ping = ": ping\n\n";
+
+    if (httpd_resp_send_chunk(req, ping, strlen(ping)) != ESP_OK) {
+      break; // client disconnected
+    }
+  }
+
+  // close stream cleanly
+  httpd_resp_send_chunk(req, NULL, 0);
   return ESP_OK;
 }
 
