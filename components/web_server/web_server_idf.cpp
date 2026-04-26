@@ -426,6 +426,7 @@ class IDFBackend : public IWebServer {
 };
 
 IWebServer *make_idf_server(WebServerCustom *parent, uint16_t port) {
+  (void)port;
   return new IDFBackend(parent);
 }
 

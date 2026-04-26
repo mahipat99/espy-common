@@ -70,8 +70,18 @@ void WebServerCustom::setup() {
   return;
 #endif
 
-  backend_->start();
-  register_entity_callbacks();
+  App.scheduler.set_interval(this, "wait_wifi", 500, [this]() {
+    if (wifi::global_wifi_component != nullptr &&
+        wifi::global_wifi_component->is_connected()) {
+
+      ESP_LOGI(TAG, "WiFi ready, starting web server");
+
+      backend_->start();
+      register_entity_callbacks();
+
+      App.scheduler.cancel_interval(this, "wait_wifi");
+    }
+  });
 }
 
 void WebServerCustom::loop() {}
