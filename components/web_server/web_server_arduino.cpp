@@ -118,4 +118,8 @@ class ArduinoWebServer : public IWebServer {
 }  // namespace web_server_custom
 }  // namespace esphome
 
+IWebServer *make_arduino_server(WebServerCustom *parent, uint16_t port) {
+  return new ArduinoWebServer(parent, port);
+}
+
 #endif

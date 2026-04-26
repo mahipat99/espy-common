@@ -38,23 +38,31 @@ class IDFWebServer : public IWebServer {
   httpd_handle_t server_{nullptr};
 
   static esp_err_t root_handler(httpd_req_t *req) {
-    const char *resp = "ESPHome Web Server (IDF)";
-    httpd_resp_set_type(req, "text/plain");
-    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
+
+    httpd_resp_send(
+        req,
+        reinterpret_cast<const char *>(WEB_UI_GZ),
+        WEB_UI_GZ_LEN
+    );
+
     return ESP_OK;
   }
 
   static esp_err_t state_handler(httpd_req_t *req) {
-    auto *self = (WebServerCustom *) req->user_ctx;
+    auto *self = static_cast<WebServerCustom *>(req->user_ctx);
 
     DynamicJsonDocument doc(4096);
-    JsonObject obj = doc.to<JsonObject>();
     self->build_all_entities_json(doc);
 
     std::string out;
     serializeJson(doc, out);
 
     httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
     httpd_resp_send(req, out.c_str(), out.length());
 
     return ESP_OK;
@@ -79,5 +87,10 @@ class IDFWebServer : public IWebServer {
 
 }  // namespace web_server_custom
 }  // namespace esphome
+
+esphome::web_server_custom::IWebServer *
+make_idf_server(esphome::web_server_custom::WebServerCustom *parent, uint16_t port) {
+  return new esphome::web_server_custom::IDFWebServer(parent, port);
+}
 
 #endif

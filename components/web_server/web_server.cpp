@@ -168,15 +168,15 @@ void WebServerCustom::setup() {
   ESP_LOGCONFIG(TAG, "Setting up custom web server on port %u", port_);
 
 #if defined(USE_ESP_IDF)
-  server_ = std::make_unique<IDFWebServer>(this, port_);
+  backend_.reset(make_idf_server(this, port_));
 #elif defined(ARDUINO)
-  server_ = std::make_unique<ArduinoWebServer>(this, port_);
+  backend_.reset(make_arduino_server(this, port_));
 #else
   ESP_LOGW(TAG, "No supported framework for web server");
   return;
 #endif
 
-  server_->begin();
+  backend_->begin();
 
   ESP_LOGCONFIG(TAG, "Web server backend started");
 }
