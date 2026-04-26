@@ -124,10 +124,9 @@ static esp_err_t h_events(httpd_req_t *req) {
   httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
   httpd_resp_set_hdr(req, "Connection", "keep-alive");
 
-  // initial flush
-  httpd_resp_send_chunk(req, "", 0);
+  const char *hello = ": connected\n\n";
+  httpd_resp_send_chunk(req, hello, strlen(hello));
 
-  // send initial state
   JsonDocument doc;
   self->parent_->build_all_entities_json(doc);
 
@@ -137,19 +136,15 @@ static esp_err_t h_events(httpd_req_t *req) {
   std::string msg = "event: full_state\ndata: " + payload + "\n\n";
   httpd_resp_send_chunk(req, msg.c_str(), msg.size());
 
-  // 🔥 KEEP STREAM ALIVE
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // ping to keep connection alive
     const char *ping = ": ping\n\n";
-
     if (httpd_resp_send_chunk(req, ping, strlen(ping)) != ESP_OK) {
-      break; // client disconnected
+      break;
     }
   }
 
-  // close stream cleanly
   httpd_resp_send_chunk(req, NULL, 0);
   return ESP_OK;
 }
