@@ -116,15 +116,16 @@ class IDFBackend : public IWebServer {
   // ─────────────────────────────────────────────
   // ✅ CORRECT SSE HANDLER (PERSISTENT)
   // ─────────────────────────────────────────────
-  static esp_err_t h_events(httpd_req_t *req) {
-    auto *self = static_cast<IDFBackend *>(req->user_ctx);
-    set_cors(req);
+static esp_err_t h_events(httpd_req_t *req) {
+  auto *self = static_cast<IDFBackend *>(req->user_ctx);
+  set_cors(req);
 
-    httpd_resp_set_type(req, "text/event-stream");
-    httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
-    httpd_resp_set_hdr(req, "Connection", "keep-alive");
+  httpd_resp_set_type(req, "text/event-stream");
+  httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
+  httpd_resp_set_hdr(req, "Connection", "keep-alive");
+  httpd_resp_set_hdr(req, "Transfer-Encoding", "chunked");
 
-  // 🔥 IMPORTANT: flush headers
+  // 🔥 START STREAM
   httpd_resp_send_chunk(req, "", 0);
 
   int fd = httpd_req_to_sockfd(req);
@@ -149,10 +150,11 @@ class IDFBackend : public IWebServer {
 
   std::string init = "event: full_state\ndata: " + payload + "\n\n";
 
+  // 🔥 NOW THIS WILL WORK
   httpd_socket_send(self->server_, fd, init.c_str(), init.size(), 0);
 
-    return ESP_OK;
-  }
+  return ESP_OK;
+}
 
   // ─────────────────────────────────────────────
   void register_routes() {
