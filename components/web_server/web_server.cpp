@@ -1,6 +1,5 @@
 // web_server.cpp — shared logic: JSON builders, entity callbacks, setup dispatch
 #include "web_server.h"
-#include "web_server_idf.cpp"
 #include "esphome/core/log.h"
 #include "esphome/core/application.h"
 
