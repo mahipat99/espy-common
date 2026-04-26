@@ -124,45 +124,32 @@ class IDFBackend : public IWebServer {
     httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
     httpd_resp_set_hdr(req, "Connection", "keep-alive");
 
-    int fd = httpd_req_to_sockfd(req);
+  // 🔥 IMPORTANT: flush headers
+  httpd_resp_send_chunk(req, "", 0);
 
-    {
-      std::lock_guard<std::mutex> lock(self->sse_mutex_);
+  int fd = httpd_req_to_sockfd(req);
 
-      if (self->clients_.size() >= 5) {
-        httpd_sess_trigger_close(self->server_, fd);
-        return ESP_FAIL;
-      }
+  {
+    std::lock_guard<std::mutex> lock(self->sse_mutex_);
 
-      self->clients_.push_back({fd});
+    if (self->clients_.size() >= 5) {
+      httpd_sess_trigger_close(self->server_, fd);
+      return ESP_FAIL;
     }
 
-    // send initial full state
-    JsonDocument doc;
-    self->parent_->build_all_entities_json(doc);
+    self->clients_.push_back({fd});
+  }
 
-    std::string payload;
-    serializeJson(doc, payload);
+  // send initial state
+  JsonDocument doc;
+  self->parent_->build_all_entities_json(doc);
 
-    std::string init = "event: full_state\ndata: " + payload + "\n\n";
-    httpd_socket_send(self->server_, fd, init.c_str(), init.size(), 0);
+  std::string payload;
+  serializeJson(doc, payload);
 
-    // 🔥 KEEP CONNECTION ALIVE (REQUIRED FOR SSE)
-    while (true) {
-      vTaskDelay(pdMS_TO_TICKS(15000));
+  std::string init = "event: full_state\ndata: " + payload + "\n\n";
 
-      const char *ping = ": ping\n\n";
-      int ret = httpd_socket_send(self->server_, fd, ping, strlen(ping), 0);
-
-      if (ret < 0) {
-        httpd_sess_trigger_close(self->server_, fd);
-
-        std::lock_guard<std::mutex> lock(self->sse_mutex_);
-        self->clients_.remove_if([fd](const SseClient &c) { return c.fd == fd; });
-
-        break;
-      }
-    }
+  httpd_socket_send(self->server_, fd, init.c_str(), init.size(), 0);
 
     return ESP_OK;
   }
