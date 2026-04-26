@@ -3,7 +3,7 @@
 #include "web_server.h"
 #include "esphome/core/application.h"
 
-#if USE_WEBSERVER_VERSION == 1
+#if defined(USE_WEBSERVER_VERSION) && USE_WEBSERVER_VERSION == 1
 
 namespace esphome::web_server {
 
@@ -266,6 +266,6 @@ void WebServer::handle_index_request(AsyncWebServerRequest *request) {
 }
 
 }  // namespace esphome::web_server
-#endif
+#endif  // USE_WEBSERVER_VERSION
 
-#endif
+#endif  // ESP guard
